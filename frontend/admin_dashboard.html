@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Hallmate — Admin Dashboard</title>
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --accent: #ff6b35;
+      --muted: #6b7280;
+      --card-bg: #ffffff;
+      --surface: #f7fbff;
+    }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: linear-gradient(180deg, #f8fbff 0%, #eef6ff 100%);
+      min-height: 100vh;
+      padding: 2rem;
+      color: #0f172a;
+    }
+
+    .topbar { display:flex; gap:1rem; align-items:center; margin-bottom:1.25rem; }
+    .brand { display:flex; align-items:center; gap:.75rem; }
+    .brand img { height:54px; width:auto; border-radius:10px; background:white; padding:6px; box-shadow: 0 8px 20px rgba(16,24,40,0.06); }
+    .card-cta { border-radius: 12px; box-shadow: 0 10px 30px rgba(16,24,40,0.06); background: var(--card-bg); padding: 1.25rem; }
+    .accent-btn { background: linear-gradient(90deg,var(--accent), #ff8d57); color: white; border: none; padding: .56rem .9rem; border-radius: 10px; font-weight:600; }
+    .small-muted { color:var(--muted); font-size:0.9rem; }
+    .stat { background: linear-gradient(180deg, rgba(255,255,255,0.8), rgba(255,255,255,0.6)); border-radius: 12px; padding: 1rem; box-shadow: 0 6px 18px rgba(16,24,40,0.04); }
+    .module-card { border-radius: 12px; padding: 1rem; min-height: 120px; display:flex; flex-direction:column; justify-content:space-between; gap:.6rem; }
+    .module-card .bi { font-size: 1.8rem; opacity: .92; }
+    a.card-link { text-decoration: none; color: inherit; }
+    footer small { color:var(--muted); }
+    @media (max-width: 768px) { body { padding: 1rem; } .brand img { height:46px; } }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="topbar mb-3">
+      <div class="brand">
+        <img src="/Hallmate/assets/logo.png" alt="Hallmate Logo">
+        <div>
+          <h4 class="m-0">Hallmate</h4>
+          <div class="small-muted">Admin Dashboard</div>
+        </div>
+      </div>
+
+      <div class="ms-auto d-flex align-items-center gap-2">
+        <div id="userGreeting" class="small-muted me-2">Welcome, Admin</div>
+        <button id="logoutBtn" class="btn btn-outline-secondary btn-sm">Logout</button>
+      </div>
+    </div>
+
+    <!-- Top summary + quick actions -->
+    <div class="row g-4 mb-4">
+      <div class="col-lg-8">
+        <div class="card-cta">
+          <div class="d-flex align-items-start justify-content-between">
+            <div>
+              <h5 class="mb-1">Quick Actions</h5>
+              <p class="small-muted mb-2">Get things done — manage students, rooms, exams, and seating from here.</p>
+              <div class="d-flex flex-wrap gap-2">
+                <a href="/Hallmate/frontend/manage_students.html" class="btn btn-sm btn-outline-primary">Manage Students</a>
+                <a href="/Hallmate/frontend/manage_rooms.html" class="btn btn-sm btn-outline-primary">Manage Rooms</a>
+                <a href="/Hallmate/frontend/manage_exams.html" class="btn btn-sm btn-outline-primary">Create Exams</a>
+                <a href="/Hallmate/frontend/seating.html" class="btn btn-sm btn-outline-primary">Seating</a>
+                <a href="/Hallmate/frontend/manage_faculty.html" class="btn btn-sm btn-outline-primary">Faculty</a>
+              </div>
+            </div>
+
+            <div class="text-end">
+              <div class="small-muted">System status</div>
+              <div class="h5 mb-0" id="systemStatus">Online</div>
+              <div class="small-muted mt-2">LAN ready: <span id="lanStatus">unknown</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        <div class="stat">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <div class="small-muted">Students</div>
+              <div class="h4 mb-0" id="stuCount">—</div>
+            </div>
+            <div class="text-end">
+              <div class="small-muted">Rooms</div>
+              <div class="h5 mb-0" id="roomCount">—</div>
+            </div>
+          </div>
+
+          <div class="mt-3 d-flex gap-2">
+            <a href="/Hallmate/frontend/manage_students.html" class="btn btn-sm btn-outline-secondary">View Students</a>
+            <a href="/Hallmate/frontend/manage_rooms.html" class="btn btn-sm btn-outline-secondary">View Rooms</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modules grid -->
+    <div class="row g-3 mb-4">
+      <!-- Student module -->
+      <div class="col-md-4">
+        <a href="/Hallmate/frontend/manage_students.html" class="card-link">
+          <div class="module-card bg-white card p-3 h-100">
+            <div class="d-flex justify-content-between">
+              <div>
+                <h6 class="mb-1">Students</h6>
+                <div class="small-muted">Add / Edit / Remove student records</div>
+              </div>
+              <i class="bi bi-people-fill text-primary"></i>
+            </div>
+            <div class="mt-2 small-muted">Manage batch, reg. no, department and semester.</div>
+          </div>
+        </a>
+      </div>
+
+      <!-- Faculty module -->
+      <div class="col-md-4">
+        <a href="/Hallmate/frontend/manage_faculty.html" class="card-link">
+          <div class="module-card bg-white card p-3 h-100">
+            <div class="d-flex justify-content-between">
+              <div>
+                <h6 class="mb-1">Faculty / Invigilation</h6>
+                <div class="small-muted">Maintain invigilator profiles and assignments</div>
+              </div>
+              <i class="bi bi-person-badge-fill text-success"></i>
+            </div>
+            <div class="mt-2 small-muted">Assign duties and contact details.</div>
+          </div>
+        </a>
+      </div>
+
+      <!-- Rooms module -->
+      <div class="col-md-4">
+        <a href="/Hallmate/frontend/manage_rooms.html" class="card-link">
+          <div class="module-card bg-white card p-3 h-100">
+            <div class="d-flex justify-content-between">
+              <div>
+                <h6 class="mb-1">Rooms & Halls</h6>
+                <div class="small-muted">Add rooms, set capacity & location</div>
+              </div>
+              <i class="bi bi-building text-warning"></i>
+            </div>
+            <div class="mt-2 small-muted">Track availability and capacities.</div>
+          </div>
+        </a>
+      </div>
+
+      <!-- Exams module -->
+      <div class="col-md-4">
+        <a href="/Hallmate/frontend/manage_exams.html" class="card-link">
+          <div class="module-card bg-white card p-3 h-100">
+            <div class="d-flex justify-content-between">
+              <div>
+                <h6 class="mb-1">Exam Scheduling</h6>
+                <div class="small-muted">Create exam events with date/time</div>
+              </div>
+              <i class="bi bi-calendar-event text-danger"></i>
+            </div>
+            <div class="mt-2 small
