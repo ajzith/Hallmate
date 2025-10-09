@@ -73,7 +73,7 @@
 <body>
   <div class="card card-login d-flex flex-row">
     <div class="left-panel col-md-5 d-none d-md-flex">
-     <center> <img src="/Hallmate/assets/logo.png" alt="Hallmate Logo" class="brand-logo mb-3"> </center>
+     <center> <img src="/hallmate/logo.jpg" alt="Hallmate Logo" class="brand-logo mb-3"> </center>
       <div> 
         <h1>Hallmate</h1>
         <p class="lead">Click. Check. Chill. — Smart exam hall and seat allocation.</p>
@@ -95,7 +95,7 @@
 
         <form id="loginForm" autocomplete="off">
           <div class="mb-3">
-            <label class="form-label small-muted">Username</label>
+            <label class="form-label small-muted">Username <b>(Use registration number, If student)</b></label>
             <input id="username" class="form-control form-control-lg" required>
           </div>
 
@@ -168,20 +168,32 @@ document.getElementById('togglePassword').addEventListener('click', () => {
       };
 
       try {
-        const resp = await fetch('/Hallmate/backend/login.php', {
+        const resp = await fetch('/hallmate/backend/login.php', {
           method: 'POST',
           headers: {'Content-Type':'application/json'},
           credentials: 'same-origin',
           body: JSON.stringify(payload)
         });
         const data = await resp.json();
-        if (resp.ok && data.success) {
-          // redirect to admin dashboard (create below)
-          window.location.href = '/Hallmate/frontend/admin_dashboard.php';
+          if (resp.ok && data.success) {
+            if (data.role === "admin") {
+                window.location.href = "/hallmate/frontend/admin_dashboard.php";
+            } 
+            else if (data.role === "faculty") {
+                window.location.href = "/hallmate/frontend/faculty_dashboard.html";
+            } 
+            else if (data.role === "student") {
+               window.location.href = "/hallmate/frontend/student_dashboard.html";
+            }
+            else {
+               message.style.display = "block";
+               message.textContent = "Unknown role: " + data.role;
+            }
         } else {
-          message.style.display = 'block';
-          message.textContent = data.error || 'Login failed. Check credentials.';
-        }
+            message.style.display = "block";
+            message.textContent = data.error || "Login failed. Check credentials.";   
+          }
+
       } catch (err) {
         message.style.display = 'block';
         message.textContent = 'Network error. Is WAMP running?';
