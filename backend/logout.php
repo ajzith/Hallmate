@@ -1,5 +1,10 @@
 <?php
 session_start();
-$_SESSION = [];
+
+// Destroy all session data
+session_unset();
 session_destroy();
-echo json_encode(['success' => true]);
+
+// Redirect to homepage (change 'index.html' if needed)
+header("Location: /hallmate/frontend/homepg.html");
+exit;
