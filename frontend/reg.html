@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register | Hallmate</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Poppins', sans-serif; background: #f8fafc; }
+    .register-container { max-width: 600px; margin: 60px auto; background: #fff; padding: 2.5rem; border-radius: 1rem; box-shadow: 0 4px 20px rgba(0,0,0,0.05);}
+    .btn-primary { background-color: #5b21b6; border: none; }
+    .btn-primary:hover { background-color: #4c1d95; }
+    .input-group-text { cursor: pointer; }
+    input:invalid { border-color: #dc3545; }
+  </style>
+</head>
+<body>
+
+<div class="register-container">
+  <h2 class="text-center mb-4 fw-bold">Create Your Account</h2>
+	
+  <ul class="nav nav-tabs mb-4 justify-content-center" id="registerTabs" role="tablist">
+    <li class="nav-item">
+      <button class="nav-link active" id="student-tab" data-bs-toggle="tab" data-bs-target="#student" type="button" role="tab" aria-controls="student" aria-selected="true">Student</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" id="faculty-tab" data-bs-toggle="tab" data-bs-target="#faculty" type="button" role="tab" aria-controls="faculty" aria-selected="false">Faculty</button>
+    </li>
+  </ul>
+
+  <div class="tab-content" id="registerTabsContent">
+    <div class="tab-pane fade show active" id="student" role="tabpanel" aria-labelledby="student-tab">
+      <form action="../backend/register.php" method="POST" onsubmit="return validateStudentForm(this);">
+        <input type="hidden" name="role" value="student">
+        <input type="hidden" name="course_name" id="real_course_name">
+        
+        <div class="mb-3"><label class="form-label">Full Name</label><input type="text" class="form-control" name="name" required></div>
+        <div class="mb-3"><label class="form-label">Email Address</label><input type="email" class="form-control" name="email" required></div>
+        
+        <div class="mb-3">
+            <label class="form-label">Course</label>
+            <select class="form-select" id="student_course_display" required>
+                <option value="">-- Select Your Batch --</option>
+                
+                <optgroup label="Commerce & BBA">
+                    <option value="2024 M.Com. Finance and Systems III Semester">2024 M.Com. Finance and Systems III Semester</option>
+                    <option value="2025 M.Com. Finance and Systems I Semester">2025 M.Com. Finance and Systems I Semester</option>
+                    <option value="2022 B.Com. (FINTECH) VII Semester">2022 B.Com. (FINTECH) VII Semester</option>
+                    <option value="2023 B.Com. (FINTECH) V Semester">2023 B.Com. (FINTECH) V Semester</option>
+                    <option value="2023 B.Com. (TAXATION & FINANCE) V Semester">2023 B.Com. (TAXATION & FINANCE) V Semester</option>
+                    <option value="2023 BBA V Semester">2023 BBA V Semester</option>
+                    <option value="2024 B.Com. (FINTECH) III Semester">2024 B.Com. (FINTECH) III Semester</option>
+                    <option value="2024 B.Com. (TAXATION & FINANCE) III Semester">2024 B.Com. (TAXATION & FINANCE) III Semester</option>
+                    <option value="2024 BBA III Semester">2024 BBA III Semester</option>
+                    <option value="2025 B.Com.(Honours) with Research in FINTECH I Semester">2025 B.Com.(Honours) with Research in FINTECH I Semester</option>
+                    <option value="2025 B.Com with ACCA I Semester">2025 B.Com with ACCA I Semester</option>
+                    <option value="2025 BBA (Honours) I Semester">2025 BBA (Honours) I Semester</option>
+                </optgroup>
+                
+                <optgroup label="Computer Science">
+                    <option value="Int MCA 2021 Batch A">Int MCA 2021 Batch A</option>
+                    <option value="Int MCA 2021 Batch B">Int MCA 2021 Batch B</option>
+                    <option value="Int MCA 2021 Batch C">Int MCA 2021 Batch C</option>
+                    <option value="Int MCA 2022 Batch A">Int MCA 2022 Batch A</option>
+                    <option value="Int MCA 2022 Batch B">Int MCA 2022 Batch B</option>
+                    <option value="2023 BCA Data Science">2023 BCA Data Science</option>
+                    <option value="2023 Int MCA A Batch">2023 Int MCA A Batch</option>
+                    <option value="2023 BCA A">2023 BCA A</option>
+                    <option value="2023 BCA B">2023 BCA B</option>
+                    <option value="2023 Int MCA B Batch">2023 Int MCA B Batch</option>
+                    <option value="2024 BCA A (H)">2024 BCA A (H)</option>
+                    <option value="2024 BCA B (H)">2024 BCA B (H)</option>
+                    <option value="2024 BCA C (H)">2024 BCA C (H)</option>
+                    <option value="2024 MCA III Semester Batch A">2024 MCA III Semester Batch A</option>
+                    <option value="2024 MCA III Semester Batch B">2024 MCA III Semester Batch B</option>
+                    <option value="2025 BCA Honours A">2025 BCA Honours A (Regular)</option>
+                    <option value="2025 BCA Honours B">2025 BCA Honours B (AI &amp; DS)</option>
+                    <option value="2025 BCA Honours C">2025 BCA Honours C (AI &amp; DS)</option>
+                    <option value="2025 BCA Honours D">2025 BCA Honours D (Cyber Security)</option>
+                    <option value="MCA 2025 Regular">MCA 2025 Regular</option>
+                    <option value="MCA 2025 AI&DS">MCA 2025 AI&DS</option>
+                    <option value="MCA 2025 Cybersecurity">MCA 2025 Cybersecurity</option>
+                </optgroup>
+                
+                <optgroup label="English">
+                    <option value="2023 Int. MA English Language and Literature V Semester">2023 Int. MA English Language and Literature V Semester</option>
+                    <option value="2021 Int. MA English Language and Literature IX Semester">2021 Int. MA English Language and Literature IX Semester</option>
+                    <option value="2024 MA English Language and Literature III Semester">2024 MA English Language and Literature III Semester</option>
+                </optgroup>
+                
+                <optgroup label="Mathematics">
+                    <option value="2021 Int M.Sc Mathematics IX Semester">2021 Int M.Sc Mathematics IX Semester</option>
+                    <option value="2022 Int M.Sc Mathematics VII Semester">2022 Int M.Sc Mathematics VII Semester</option>
+                    <option value="2024 M.Sc Applied Statistics and Data Analytics III Semester">2024 M.Sc Applied Statistics and Data Analytics III Semester</option>
+                    <option value="2024 M.Sc Data Science with Logistics and Supply Chain Management III Semester">2024 M.Sc Data Science with Logistics and Supply Chain Management III Semester</option>
+                    <option value="2025 M.Sc Applied Statistics and Data Analytics I Sem">2025 M.Sc Applied Statistics and Data Analytics I Sem</option>
+                </optgroup>
+                
+                <optgroup label="Physics">
+                    <option value="2021 Int. M.Sc. Physics IX Semester">2021 Int. M.Sc. Physics IX Semester</option>
+                    <option value="2022 Int. M.Sc. Physics VII Semester">2022 Int. M.Sc. Physics VII Semester</option>
+                    <option value="2023 Int. M.Sc. Physics V Semester">2023 Int. M.Sc. Physics V Semester</option>
+                    <option value="2024 B.Sc. (H) Applied Physics III Semester">2024 B.Sc. (H) Applied Physics III Semester</option>
+                </optgroup>
+
+                <optgroup label="Visual Media & Design">
+                    <option value="2025 B.Des. (Honours) I Semester">2025 B.Des. (Honours) I Semester</option>
+                    <option value="2025 B.Sc. VM I Semester">2025 B.Sc. VM I Semester</option>
+                    <option value="2024 B.Des. III Semester">2024 B.Des. III Semester</option>
+                    <option value="2024 B.Sc. VM III Semester">2024 B.Sc. VM III Semester</option>
+                    <option value="2023 B.Des. V Semester">2023 B.Des. V Semester</option>
+                    <option value="2023 B.Sc. VM V Semester">2023 B.Sc. VM V Semester</option>
+                    <option value="2022 B.Des. VII semester">2022 B.Des. VII semester</option>
+                    <option value="2025 MA JMC I Semester">2025 MA JMC I Semester</option>
+                    <option value="2025 MA (VMC) I Semester">2025 MA (VMC) I Semester</option>
+                    <option value="2025 MFA AAA I Semester">2025 MFA AAA I Semester</option>
+                    <option value="2024 MA JMC III Semester">2024 MA JMC III Semester</option>
+                    <option value="2024 MA VMC III Semester">2024 MA VMC III Semester</option>
+                    <option value="2024 MFA AAA">2024 MFA AAA</option>
+                    <option value="2024 MFA AVFX">2024 MFA AVFX</option>
+                </optgroup>
+            </select>
+        </div>
+        
+        <div class="mb-3" id="language_select_div" style="display: none;">
+            <label class="form-label">Language 1</label>
+            <select class="form-select" id="language_select">
+                <option value="">-- Select your language --</option>
+                <option value="Hindi">Hindi</option>
+                <option value="Sanskrit">Sanskrit</option>
+                <option value="Malayalam">Malayalam</option>
+            </select>
+        </div>
+        
+        <div class="mb-3"><label class="form-label">Register Number</label><input type="text" class="form-control" name="username" id="student_reg_no" placeholder="Select a course first" required></div>
+        
+        <div class="mb-3"><label class="form-label">Batch Year</label><input type="text" class="form-control" name="batch" placeholder="e.g., 2023" required></div>
+        <div class="mb-3"><label class="form-label">Department</label><input type="text" class="form-control" name="department" required></div>
+        <div class="mb-3"><label class="form-label">Current Semester</label><input type="number" class="form-control" name="semester" min="1" required></div>
+        
+        <div class="mb-3"><label class="form-label">Password</label><div class="input-group"><input type="password" class="form-control" name="password" id="studentPassword" required><span class="input-group-text toggle-password" data-target="studentPassword">👁️</span></div></div>
+        <div class="mb-3"><label class="form-label">Confirm Password</label><div class="input-group"><input type="password" class="form-control" name="confirm_password" id="studentConfirmPassword" required><span class="input-group-text toggle-password" data-target="studentConfirmPassword">👁️</span></div></div>
+        <div class="d-grid"><button type="submit" class="btn btn-primary">Sign Up</button></div>
+      </form>
+      </div>
+
+    <div class="tab-pane fade" id="faculty" role="tabpanel" aria-labelledby="faculty-tab">
+      <form action="../backend/register.php" method="POST" onsubmit="return validateFacultyForm(this);">
+        <input type="hidden" name="role" value="faculty">
+        <div class="mb-3"><label class="form-label">Full Name</label><input type="text" class="form-control" name="name" required></div>
+        <div class="mb-3"><label class="form-label">Username</label><input type="text" class="form-control" name="username" pattern="[A-Za-z0-9_]{3,50}" required></div>
+        <div class="mb-3"><label class="form-label">Email</label><input type="email" class="form-control" name="email" required></div>
+        <div class="mb-3"><label class="form-label">Department</label><input type="text" class="form-control" name="department" required></div>
+        <div class="mb-3"><label class="form-label">Password</label><div class="input-group"><input type="password" class="form-control" name="password" id="facultyPassword" required><span class="input-group-text toggle-password" data-target="facultyPassword">👁️</span></div></div>
+        <div class="mb-3"><label class="form-label">Confirm Password</label><div class="input-group"><input type="password" class="form-control" name="confirm_password" id="facultyConfirmPassword" required><span class="input-group-text toggle-password" data-target="facultyConfirmPassword">👁️</span></div></div>
+        <div class="d-grid"><button type="submit" class="btn btn-primary">Sign Up</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div class="text-center mt-4">
+    <a href="login.html" class="text-decoration-none">Already Registered? <b>Sign In</b></a>
+  </div>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+
+  // --- 💡 BATCH RULES (Simplified) 💡 ---
+  // We've removed the language-specific batches from here
+  const batchRules = {
+    // Computer Science
+    "Int MCA 2021 Batch A": { pattern: "^kh\\.sc\\.i5mca21\\d{3}$", year: "2021", dept: "Computer Science", sem: 9 },
+    "Int MCA 2021 Batch B": { pattern: "^kh\\.sc\\.i5mca21\\d{3}$", year: "2021", dept: "Computer Science", sem: 9 },
+    "Int MCA 2021 Batch C": { pattern: "^kh\\.sc\\.i5mca21\\d{3}$", year: "2021", dept: "Computer Science", sem: 9 },
+    "Int MCA 2022 Batch A": { pattern: "^kh\\.en\\.i5mca22\\d{3}$", year: "2022", dept: "Computer Science", sem: 7 },
+    "Int MCA 2022 Batch B": { pattern: "^kh\\.en\\.i5mca22\\d{3}$", year: "2022", dept: "Computer Science", sem: 7 },
+    "2023 BCA Data Science": { pattern: "^kh\\.sc\\.u3cds23\\d{3}$", min: 1, max: 67, year: "2023", dept: "Computer Science", sem: 5 },
+    "2023 Int MCA A Batch": { pattern: "^kh\\.sc\\.i5mca23\\d{3}$", min: 1, max: 56, year: "2023", dept: "Computer Science", sem: 5 },
+    "2023 BCA A": { pattern: "^kh\\.sc\\.u3bca23\\d{3}$", min: 1, max: 48, year: "2023", dept: "Computer Science", sem: 5 },
+    "2023 BCA B": { pattern: "^kh\\.sc\\.u3bca23\\d{3}$", min: 49, max: 95, year: "2023", dept: "Computer Science", sem: 5 },
+    "2023 Int MCA B Batch": { pattern: "^kh\\.sc\\.i5mca23\\d{3}$", min: 57, max: 114, year: "2023", dept: "Computer Science", sem: 5 },
+    "2024 BCA A (H)": { pattern: "^kh\\.en\\.u4bca24\\d{3}$", min: 1, max: 58, year: "2024", dept: "Computer Science", sem: 3 },
+    "2024 BCA B (H)": { pattern: "^kh\\.en\\.u4bca24\\d{3}$", min: 101, max: 158, year: "2024", dept: "Computer Science", sem: 3 },
+    "2024 BCA C (H)": { pattern: "^kh\\.en\\.u4bca24\\d{3}$", min: 201, max: 259, year: "2024", dept: "Computer Science", sem: 3 },
+    "2024 MCA III Semester Batch A": { pattern: "^kh\\.en\\.p2mca24\\d{3}$", min: 1, max: 60, year: "2024", dept: "Computer Science", sem: 3 },
+    "2024 MCA III Semester Batch B": { pattern: "^kh\\.en\\.p2mca24\\d{3}$", min: 101, max: 160, year: "2024", dept: "Computer Science", sem: 3 },
+    "2025 BCA Honours A": { pattern: "^kh\\.en\\.u4bca25\\d{3}$", min: 1, max: 59, year: "2025", dept: "Computer Science", sem: 1, requires_lang: true },
+    "2025 BCA Honours B": { pattern: "^kh\\.en\\.u4bca25\\d{3}$", min: 101, max: 160, year: "2025", dept: "Computer Science", sem: 1, requires_lang: true },
+    "2025 BCA Honours C": { pattern: "^kh\\.en\\.u4bca25\\d{3}$", min: 201, max: 260, year: "2025", dept: "Computer Science", sem: 1, requires_lang: true },
+    "2025 BCA Honours D": { pattern: "^kh\\.en\\.u4bca25\\d{3}$", min: 301, max: 360, year: "2025", dept: "Computer Science", sem: 1, requires_lang: true },
+    "MCA 2025 Regular": { pattern: "^kh\\.en\\.p2mca25\\d{3}$", min: 1, max: 56, year: "2025", dept: "Computer Science", sem: 1 },
+    "MCA 2025 AI&DS": { pattern: "^kh\\.en\\.p2mca25\\d{3}$", min: 101, max: 162, year: "2025", dept: "Computer Science", sem: 1 },
+    "MCA 2025 Cybersecurity": { pattern: "^kh\\.en\\.p2mca25\\d{3}$", min: 201, max: 260, year: "2025", dept: "Computer Science", sem: 1 },
+    
+    // Mathematics
+    "2021 Int M.Sc Mathematics IX Semester": { pattern: "^kh\\.sc\\.i5mat21\\d{3}$", year: "2021", dept: "Mathematics", sem: 9 },
+    "2022 Int M.Sc Mathematics VII Semester": { pattern: "^kh\\.ps\\.i5mat22\\d{3}$", year: "2022", dept: "Mathematics", sem: 7 },
+    "2024 M.Sc Applied Statistics and Data Analytics III Semester": { pattern: "^kh\\.ps\\.p2asd24\\d{3}$", year: "2024", dept: "Mathematics", sem: 3 },
+    "2024 M.Sc Data Science with Logistics and Supply Chain Management III Semester": { pattern: "^kh\\.ps\\.p2dls24\\d{3}$", year: "2024", dept: "Mathematics", sem: 3 },
+    "2025 M.Sc Applied Statistics and Data Analytics I Sem": { pattern: "^kh\\.ps\\.p2asd25\\d{3}$", year: "2025", dept: "Mathematics", sem: 1 },
+
+    // English
+    "2023 Int. MA English Language and Literature V Semester": { pattern: "^kh\\.ah\\.i5eng23\\d{3}$", year: "2023", dept: "English", sem: 5 },
+    "2021 Int. MA English Language and Literature IX Semester": { pattern: "^kh\\.ar\\.i5eng21\\d{3}$", year: "2021", dept: "English", sem: 9 },
+    "2024 MA English Language and Literature III Semester": { pattern: "^kh\\.ah\\.p2ell24\\d{3}$", year: "2024", dept: "English", sem: 3 },
+    
+    // Physics
+    "2021 Int. M.Sc. Physics IX Semester": { pattern: "^kh\\.sc\\.i5phy21\\d{3}$", year: "2021", dept: "Physics", sem: 9 },
+    "2022 Int. M.Sc. Physics VII Semester": { pattern: "^kh\\.ps\\.i5phy22\\d{3}$", year: "2022", dept: "Physics", sem: 7 },
+    "2023 Int. M.Sc. Physics V Semester": { pattern: "^kh\\.ps\\.i5phy23\\d{3}$", year: "2023", dept: "Physics", sem: 5 },
+    "2024 B.Sc. (H) Applied Physics III Semester": { pattern: "^kh\\.ps\\.u4phy24\\d{3}$", year: "2024", dept: "Physics", sem: 3 },
+
+    // Visual Media
+    "2025 B.Des. (Honours) I Semester": { pattern: "^kh\\.ah\\.u4des25\\d{3}$", year: "2025", dept: "Visual Media", sem: 1, requires_lang: true },
+    "2025 B.Sc. VM I Semester": { pattern: "^kh\\.ah\\.u4vmc25\\d{3}$", min: 1, max: 37, year: "2025", dept: "Visual Media", sem: 1, requires_lang: true },
+    "2024 B.Des. III Semester": { pattern: "^kh\\.ah\\.u4des24\\d{3}$", min: 1, max: 21, year: "2024", dept: "Visual Media", sem: 3 },
+    "2024 B.Sc. VM III Semester": { pattern: "^kh\\.ah\\.u4vmc24\\d{3}$", min: 1, max: 33, year: "2024", dept: "Visual Media", sem: 3 },
+    "2023 B.Des. V Semester": { pattern: "^kh\\.ah\\.u4des23\\d{3}$", min: 1, max: 26, year: "2023", dept: "Visual Media", sem: 5 },
+    "2023 B.Sc. VM V Semester": { pattern: "^kh\\.ah\\.u3vmc23\\d{3}$", min: 1, max: 11, year: "2023", dept: "Visual Media", sem: 5 },
+    "2022 B.Des. VII semester": { pattern: "^kh\\.ah\\.u4des22\\d{3}$", min: 1, max: 22, year: "2022", dept: "Visual Media", sem: 7 },
+    "2025 MA JMC I Semester": { pattern: "^kh\\.ah\\.p2jmc25\\d{3}$", min: 1, max: 9, year: "2025", dept: "Visual Media", sem: 1 },
+    "2025 MA (VMC) I Semester": { pattern: "^kh\\.ah\\.p2vmc25\\d{3}$", min: 1, max: 11, year: "2025", dept: "Visual Media", sem: 1 },
+    "2025 MFA AAA I Semester": { pattern: "^kh\\.ah\\.p2aaa25\\d{3}$", min: 1, max: 10, year: "2025", dept: "Visual Media", sem: 1 },
+    "2024 MA JMC III Semester": { pattern: "^kh\\.ah\\.p2jmc24\\d{3}$", min: 1, max: 13, year: "2024", dept: "Visual Media", sem: 3 },
+    "2024 MA VMC III Semester": { pattern: "^kh\\.ah\\.p2vmc24\\d{3}$", min: 1, max: 6, year: "2024", dept: "Visual Media", sem: 3 },
+    "2024 MFA AAA": { pattern: "^kh\\.ah\\.p2aaa24\\d{3}$", year: "2024", dept: "Visual Media", sem: 3 },
+    "2024 MFA AVFX": { pattern: "^kh\\.ah\\.p2avx24\\d{3}$", min: 1, max: 2, year: "2024", dept: "Visual Media", sem: 3 },
+
+    // Commerce & BBA
+    "2024 M.Com. Finance and Systems III Semester": { pattern: "^kh\\.ah\\.p2com24\\d{3}$", min: 1, max: 12, year: "2024", dept: "Commerce", sem: 3 },
+    "2025 M.Com. Finance and Systems I Semester": { pattern: "^kh\\.ah\\.p2com25\\d{3}$", min: 1, max: 11, year: "2025", dept: "Commerce", sem: 1 },
+    "2022 B.Com. (FINTECH) VII Semester": { pattern: "^kh\\.ah\\.u4com22\\d{3}$", min: 1, max: 25, year: "2022", dept: "Commerce", sem: 7 },
+    "2023 B.Com. (FINTECH) V Semester": { pattern: "^kh\\.ah\\.u4com23\\d{3}$", min: 1, max: 40, year: "2023", dept: "Commerce", sem: 5 },
+    "2023 B.Com. (TAXATION & FINANCE) V Semester": { pattern: "^kh\\.ah\\.u3com23\\d{3}$", min: 1, max: 40, year: "2023", dept: "Commerce", sem: 5 },
+    "2023 BBA V Semester": { pattern: "^kh\\.ah\\.u3bba23\\d{3}$", min: 1, max: 28, year: "2023", dept: "BBA", sem: 5 },
+    "2024 B.Com. (FINTECH) III Semester": { pattern: "^kh\\.ah\\.u4fin24\\d{3}$", min: 1, max: 32, year: "2024", dept: "Commerce", sem: 3 },
+    "2024 B.Com. (TAXATION & FINANCE) III Semester": { pattern: "^kh\\.ah\\.u4tax24\\d{3}$", min: 1, max: 28, year: "2024", dept: "Commerce", sem: 3 },
+    "2024 BBA III Semester": { pattern: "^kh\\.ah\\.u4bba24\\d{3}$", min: 1, max: 32, year: "2024", dept: "BBA", sem: 3 },
+    "2025 B.Com.(Honours) with Research in FINTECH I Semester": { pattern: "^kh\\.ah\\.u4fin25\\d{3}$", min: 1, max: 57, year: "2025", dept: "Commerce", sem: 1, requires_lang: true },
+    "2025 B.Com with ACCA I Semester": { pattern: "^kh\\.ah\\.u4com25\\d{3}$", min: 1, max: 44, year: "2025", dept: "Commerce", sem: 1, requires_lang: true },
+    "2025 BBA (Honours) I Semester": { pattern: "^kh\\.ah\\.u4bba25\\d{3}$", min: 1, max: 25, year: "2025", dept: "BBA", sem: 1, requires_lang: true }
+  };
+
+  document.addEventListener('DOMContentLoaded', function() {
+    
+    const courseSelect = document.getElementById('student_course_display'); // This is the visible dropdown
+    const realCourseNameInput = document.getElementById('real_course_name'); // This is the hidden input
+    
+    const regNoInput = document.getElementById('student_reg_no');
+    const batchYearInput = document.querySelector('#student form [name="batch"]');
+    const deptInput = document.querySelector('#student form [name="department"]');
+    const semInput = document.querySelector('#student form [name="semester"]');
+    
+    const langDiv = document.getElementById('language_select_div');
+    const langSelect = document.getElementById('language_select');
+
+    // Force register number to lowercase on input
+    regNoInput.addEventListener('input', function() {
+        this.value = this.value.toLowerCase();
+    });
+
+    courseSelect.addEventListener('change', function() {
+        const selectedCourse = this.value;
+        const rule = batchRules[selectedCourse];
+        
+        // Clear language and set pattern first
+        langSelect.value = "";
+        realCourseNameInput.value = selectedCourse;
+        
+        if (rule) {
+            regNoInput.placeholder = `e.g., ${rule.pattern.slice(1, -5)}001`; 
+            regNoInput.pattern = rule.pattern; 
+            batchYearInput.value = rule.year; 
+            deptInput.value = rule.dept;      
+            semInput.value = rule.sem;
+            
+            // 💡 NEW: Show/Hide language dropdown 💡
+            if (rule.requires_lang) {
+                langDiv.style.display = 'block';
+                langSelect.required = true;
+            } else {
+                langDiv.style.display = 'none';
+                langSelect.required = false;
+            }
+
+        } else {
+            // Reset everything
+            regNoInput.placeholder = "Select a course first";
+            regNoInput.pattern = ".*"; 
+            batchYearInput.value = "";
+            deptInput.value = "";
+            semInput.value = "";
+            langDiv.style.display = 'none';
+            langSelect.required = false;
+        }
+    });
+
+    
+    document.querySelectorAll('.toggle-password').forEach(span => {
+      span.addEventListener('click', () => {
+        const targetId = span.getAttribute('data-target');
+        const passwordInput = document.getElementById(targetId);
+        if (passwordInput) {
+          passwordInput.type = passwordInput.type === 'password' ? 'text' : 'password';
+        }
+      });
+    });
+  });
+
+  
+  function validateStudentForm(form) {
+    const pwd = form.querySelector('[name=password]').value;
+    const cpwd = form.querySelector('[name=confirm_password]').value;
+    
+    if (pwd !== cpwd) {
+      alert('Passwords do not match!');
+      return false; 
+    }
+
+    // 💡 NEW: Form combination logic 💡
+    const courseSelect = document.getElementById('student_course_display');
+    const langSelect = document.getElementById('language_select');
+    const realCourseNameInput = document.getElementById('real_course_name');
+    
+    const course = courseSelect.value;
+    const lang = langSelect.value;
+    const rule = batchRules[course];
+
+    if (!rule) {
+        alert('Please select a valid course.');
+        return false;
+    }
+
+    // If language is required, check it
+    if (rule.requires_lang) {
+        if (!lang) {
+            alert('Please select your Language 1 (Hindi/Sanskrit/Malayalam).');
+            return false;
+        }
+        // Combine the course and language to create the *real* batch name
+        realCourseNameInput.value = `${course} (${lang})`;
+    } else {
+        // If no language is required, just use the selected course name
+        realCourseNameInput.value = course;
+    }
+    
+    // Now, validate the reg no against the *final* combined name
+    const finalCourseName = realCourseNameInput.value;
+    const finalRule = batchRules[finalCourseName.replace(" (Regular)", "")]; // Get the rule for the combined name
+    const regNo = form.querySelector('[name=username]').value;
+    
+    if (finalRule) {
+        // Check for 3-digit ending
+        const numericMatch = regNo.match(/\d{3}$/);
+        if (!numericMatch) {
+            alert('Invalid Register Number format. It must end with 3 digits.');
+            return false;
+        }
+        
+        // Only check min/max if the rule exists for that batch
+        if (finalRule.min !== undefined && finalRule.max !== undefined) {
+            const numeric_part = parseInt(numericMatch[0], 10);
+            if (numeric_part < finalRule.min || numeric_part > finalRule.max) {
+                alert(`Invalid Register Number for ${course}.\n\nYour number (${numeric_part}) is outside the valid range of ${finalRule.min} to ${finalRule.max}.`);
+                return false;
+            }
+        }
+    } else {
+        // This should not happen if logic is correct, but as a fallback:
+        alert('Could not validate registration rules. Please refresh and try again.');
+        return false;
+    }
+    
+    return true; // Proceed with submission
+  }
+
+  function validateFacultyForm(form) {
+    const pwd = form.querySelector('[name=password]').value;
+    const cpwd = form.querySelector('[name=confirm_password]').value;
+    if (pwd !== cpwd) {
+      alert('Passwords do not match!');
+      return false; 
+    }
+    return true; 
+  }
+</script>
+</body>
+</html>

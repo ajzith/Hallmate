@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Manage Invigilation - Hallmate</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+    body { background-color: #f8f9fa; }
+    .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+    }
+</style>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body class="bg-light">
+
+<div class="container mt-5">
+    <h1 class="mb-4 fw-bold text-center">Manage Invigilation</h1>
+
+    <div id="toastBox" class="toast-container"></div>
+
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-primary text-white fw-bold">Assign Invigilator to Room Slot</div>
+        <div class="card-body">
+            <form id="assignForm" class="row g-3">
+                <div class="col-md-4">
+                    <label for="examSelect" class="form-label">1. Select Exam</label>
+                    <select id="examSelect" class="form-select" required></select>
+                </div>
+                <div class="col-md-3">
+                    <label for="roomSelect" class="form-label">2. Select Room (In-Use)</label>
+                    <select id="roomSelect" class="form-select" required disabled>
+                        <option value="">-- Select an exam first --</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="facultySelect" class="form-label">3. Select Faculty</label>
+                    <select id="facultySelect" class="form-select" required></select>
+                </div>
+                <div class="col-md-1 d-flex align-items-end">
+                    <button type="submit" class="btn btn-success w-100">Assign</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-secondary text-white fw-bold d-flex justify-content-between align-items-center">
+            Current Assignments
+            <button class="btn btn-danger btn-sm" onclick="deleteAllAssignments()">
+                Delete All Assignments
+            </button>
+        </div>
+        <div class="card-body">
+            
+            <div class="mb-3">
+                <input type="text" id="tableSearchInput" class="form-control" placeholder="Search for exams, faculty, rooms...">
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped" id="assignmentTable">
+                    <thead>
+                        <tr>
+                            <th>Exam</th>
+                            <th>Date</th>
+                            <th>Faculty</th>
+                            <th>Room</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="assignmentTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- NEW Toast Function ---
+    function showToast(message, type = 'success') {
+        const toastId = 'toast-' + Math.random().toString(36).substr(2, 9);
+        const toastColor = type === 'success' ? 'bg-success' : 'bg-danger';
+        const toastHTML = `
+            <div id="${toastId}" class="toast align-items-center text-white ${toastColor} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>`;
+        
+        $('#toastBox').append(toastHTML);
+        const toastElement = new bootstrap.Toast(document.getElementById(toastId));
+        toastElement.show();
+        document.getElementById(toastId).addEventListener('hidden.bs.toast', function () {
+            this.remove();
+        });
+    }
+
+    function loadDropdowns() {
+        // 1. Load ALL exams (Theory and Lab)
+        $.get("../backend/exams.php", data => {
+            if (data.success) {
+                let options = '<option value="">-- Select Exam --</option>';
+                data.exams.sort((a, b) => a.exam_type.localeCompare(b.exam_type) || a.subject.localeCompare(b.subject));
+                data.exams.forEach(e => {
+                    options += `<option value="${e.id}">[${e.exam_type}] ${e.subject} - ${e.batch} (${e.exam_date})</option>`
+                });
+                $("#examSelect").html(options);
+            }
+        }, "json");
+
+        // 2. Load ALL faculty
+        $.get("../backend/faculty.php", data => {
+            if (data.success) {
+                let options = '<option value="">-- Select Faculty --</option>';
+                data.faculty.forEach(f => options += `<option value="${f.id}">${f.name}</option>`);
+                $("#facultySelect").html(options);
+            }
+        }, "json");
+    }
+
+    // Dynamic Room Logic
+    $("#examSelect").on("change", function() {
+        const exam_id = $(this).val();
+        const $roomSelect = $("#roomSelect");
+
+        if (exam_id) {
+            $roomSelect.prop("disabled", true).html('<option value="">-- Loading rooms... --</option>');
+            
+            $.get(`../backend/get_rooms_for_exam.php?exam_id=${exam_id}`, data => {
+                if (data.success && data.rooms.length > 0) {
+                    let options = '<option value="">-- Select Room --</option>';
+                    data.rooms.forEach(r => options += `<option value="${r.id}">${r.room_no}</option>`);
+                    $roomSelect.html(options).prop("disabled", false);
+                } else {
+                    $roomSelect.html('<option value="">-- No rooms assigned to this exam yet --</option>');
+                }
+            }, "json");
+        } else {
+            $roomSelect.prop("disabled", true).html('<option value="">-- Select an exam first --</option>');
+        }
+    });
+
+    function loadAssignments() {
+        $.get("../backend/invigilation.php", data => {
+            let rows = '';
+            if (data.success) {
+                
+                const today = new Date();
+                today.setHours(0, 0, 0, 0); 
+
+                data.assignments.forEach(a => {
+                    
+                    const examDate = new Date(a.exam_date + 'T00:00:00'); 
+
+                    let actionCell = '';
+                    if (examDate < today) {
+                        actionCell = '<span class="badge bg-secondary">Completed</span>';
+                    } else {
+                        actionCell = `<button class="btn btn-danger btn-sm" onclick="deleteAssignment(${a.id})">Remove</button>`;
+                    }
+
+                    rows += `<tr>
+                        <td>${a.subject}</td>
+                        <td>${a.exam_date}</td>
+                        <td>${a.faculty_name}</td>
+                        <td>${a.room_no}</td>
+                        <td>${actionCell}</td> 
+                    </tr>`;
+                });
+            }
+            $("#assignmentTableBody").html(rows);
+        }, "json");
+    }
+
+    $("#assignForm").submit(function(e) {
+        e.preventDefault();
+        $.ajax({
+            url: "../backend/invigilation.php",
+            method: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({
+                exam_id: parseInt($("#examSelect").val()),
+                faculty_id: parseInt($("#facultySelect").val()),
+                room_id: parseInt($("#roomSelect").val())
+            }),
+            success: function(res) {
+                if (res.success) {
+                    showToast("Invigilator assigned!", "success");
+                    loadAssignments(); 
+                    $("#facultySelect").val("");
+                } else {
+                    showToast(res.error || "Error assigning invigilator", "danger");
+                }
+            },
+            error: (jqXHR) => showToast(jqXHR.responseJSON.error || "A server error occurred.", "danger")
+        });
+    });
+
+    function deleteAssignment(id) {
+        if (confirm("Are you sure you want to remove this assignment?")) {
+            $.ajax({
+                url: "../backend/invigilation.php",
+                method: "POST",
+                contentType: "application/json",
+                data: JSON.stringify({ 
+                    _method: "DELETE",
+                    id: id 
+                }),
+                success: function(res) {
+                    if (res.success) {
+                        showToast("Assignment removed!", "success");
+                        loadAssignments();
+                    }
+                    else { showToast(res.error || "Error removing assignment", "danger"); }
+                },
+                error: (jqXHR) => {
+                     let msg = "A server error occurred.";
+                     if (jqXHR.responseJSON && jqXHR.responseJSON.error) {
+                        msg = jqXHR.responseJSON.error;
+                     }
+                     showToast(msg, "danger");
+                }
+            });
+        }
+    }
+    
+    // 💡 NEW "DELETE ALL" FUNCTION 💡
+    function deleteAllAssignments() {
+        if (confirm("Are you sure you want to delete ALL invigilation assignments? This is typically done at the start of a new semester.")) {
+            $.ajax({
+                url: "../backend/invigilation.php",
+                method: "POST",
+                contentType: "application/json",
+                data: JSON.stringify({ 
+                    _method: "DELETE_ALL" // New method
+                }),
+                success: function(res) {
+                    if (res.success) {
+                        showToast(`Successfully deleted all assignments.`, "success");
+                        loadAssignments();
+                    } else {
+                        showToast(res.error || "Error deleting assignments", "danger");
+                    }
+                },
+                error: (jqXHR) => showToast(jqXHR.responseJSON.error || "Server error.", "danger")
+            });
+        }
+    }
+    // 💡 END OF NEW FUNCTION 💡
+
+    // NEW SEARCH FUNCTION
+    $("#tableSearchInput").on("keyup", function() {
+        const value = $(this).val().toLowerCase();
+        $("#assignmentTableBody tr").filter(function() {
+            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+        });
+    });
+
+    $(document).ready(function() {
+        loadDropdowns();
+        loadAssignments();
+    });
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

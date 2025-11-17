@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Assign Lab Rooms - Hallmate</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<style>
+    body { background-color: #f8f9fa; }
+    .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+    }
+</style>
+</head>
+<body class="bg-light">
+
+<div class="container mt-5">
+    <h1 class="mb-4 fw-bold text-center">Assign Lab Seating</h1>
+
+    <div id="toastBox" class="toast-container"></div>
+
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-primary text-white fw-bold">Assign Lab Exam to Room</div>
+        <div class="card-body">
+            <form id="assignLabForm">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-5">
+                        <label for="examSelect" class="form-label">Select Lab Exam</label>
+                        <select id="examSelect" class="form-select" required></select>
+                    </div>
+                    <div class="col-md-5">
+                        <label for="roomSelect" class="form-label">Select Lab Room</label>
+                        <select id="roomSelect" class="form-select" required></select>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-success w-100">Assign</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-secondary text-white fw-bold d-flex justify-content-between align-items-center">
+            Current Lab Seating Plan
+            <button class="btn btn-danger btn-sm" onclick="deleteAllLabSeating()">
+                Delete All Lab Seating
+            </button>
+            </div>
+        <div class="card-body">
+            <div class="alert alert-info">This table shows all manually assigned lab seating plans.</div>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped" id="seatingTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Exam</th>
+                            <th>Room</th>
+                            <th>Student Name</th>
+                            <th>Seat No</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+
+function showToast(message, type = 'info') {
+    const toast = $(`
+        <div class="toast align-items-center text-white bg-${type} border-0 mb-2" role="alert">
+            <div class="d-flex">
+                <div class="toast-body">${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    `);
+    $("#toastBox").append(toast);
+    const bsToast = new bootstrap.Toast(toast[0], { delay: 3000 });
+    bsToast.show();
+    toast.on('hidden.bs.toast', () => toast.remove());
+}
+
+function loadLabSeatings() {
+    $.get("../backend/seating.php?type=Lab", function(data) {
+        if(data.success){
+            let rows = '';
+            data.seatings.forEach(s => {
+                rows += `<tr>
+                    <td>${s.id}</td>
+                    <td>${s.subject} (Exam ID:${s.exam_id})</td>
+                    <td>${s.room_no} (Room ID:${s.room_id})</td>
+                    <td>${s.student_name} (Student ID:${s.student_id})</td>
+                    <td>${s.seat_no}</td>
+                    <td><button class="btn btn-danger btn-sm" onclick="deleteSeating(${s.id})">Delete</button></td>
+                </tr>`;
+            });
+            $("#seatingTable tbody").html(rows);
+        } else {
+            showToast(data.error || "Failed to load seating plan", "danger");
+        }
+    }, "json");
+}
+
+function loadLabExams() {
+    $.get("../backend/exams.php?type=Lab", function(data) {
+        if (data.success) {
+            let options = '<option value="">-- Please select a lab exam --</option>';
+            data.exams.forEach(exam => {
+                options += `<option value="${exam.id}">${exam.subject} - ${exam.batch}</option>`;
+            });
+            $("#examSelect").html(options);
+        }
+    }, "json");
+}
+
+function loadLabRooms() {
+    $.get("../backend/rooms.php?type=Lab", function(data) {
+        if (data.success) {
+            let options = '<option value="">-- Please select a lab room --</option>';
+            data.rooms.forEach(room => {
+                options += `<option value="${room.id}">${room.room_no} (Capacity: ${room.capacity})</option>`;
+            });
+            $("#roomSelect").html(options);
+        }
+    }, "json");
+}
+
+$("#assignLabForm").submit(function(e) {
+    e.preventDefault();
+    const exam_id = $("#examSelect").val();
+    const room_id = $("#roomSelect").val();
+
+    if (!exam_id || !room_id) {
+        showToast("Please select both an exam and a room.", "warning");
+        return;
+    }
+
+    if (confirm("Are you sure? This will replace any existing seating for this exam.")) {
+        $("button").prop("disabled", true);
+        $.ajax({
+            url: "../backend/assign_lab.php",
+            method: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({ 
+                exam_id: parseInt(exam_id),
+                room_id: parseInt(room_id)
+            }),
+            success: function(res) {
+                if (res.success) {
+                    showToast(res.message || "Lab seating assigned!", "success");
+                    loadLabSeatings(); 
+                } else {
+                    showToast("Error: " + res.error, "danger");
+                }
+            },
+            error: (jqXHR) => showToast(jqXHR.responseJSON.error || "Server error.", "danger"),
+            complete: () => $("button").prop("disabled", false)
+        });
+    }
+});
+
+function deleteSeating(id){
+    if(confirm("Are you sure you want to delete this single seating entry?")){
+        $.ajax({
+            url:"../backend/seating.php", 
+            method:"POST", 
+            contentType:"application/json",
+            data: JSON.stringify({ _method: "DELETE", id: id }),
+            success:function(res){
+                if(res.success) {
+                    showToast("Entry deleted.", "success");
+                    loadLabSeatings();
+                } else { 
+                    showToast(res.error || "Error deleting", "danger"); 
+                }
+            },
+            error: () => showToast("Server error during delete.", "danger")
+        });
+    }
+}
+
+function deleteAllLabSeating() {
+    if (confirm("Are you sure you want to delete ALL lab seating entries? This cannot be undone.")) {
+        $.ajax({
+            url: "../backend/seating.php", 
+            method: "POST", 
+            contentType: "application/json",
+            data: JSON.stringify({
+                _method: "DELETE_ALL_LAB" // <-- New method
+            }),
+            success: function(res) {
+                if (res.success) {
+                    showToast(`Successfully deleted ${res.deleted} entries.`, "success");
+                    loadLabSeatings(); // Refresh the table
+                } else {
+                    showToast(res.error || "Error deleting entries", "danger");
+                }
+            },
+            error: () => showToast("Server error during bulk delete.", "danger")
+        });
+    }
+}
+
+
+$(document).ready(function(){
+    loadLabExams();
+    loadLabRooms();
+    loadLabSeatings();
+});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

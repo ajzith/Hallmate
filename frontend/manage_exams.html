@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Manage Exams - Hallmate</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<style>
+    body { background-color: #f8f9fa; }
+    .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+    }
+</style>
+</head>
+<body class="bg-light">
+
+<div class="container mt-5">
+    <h1 class="mb-4 fw-bold text-center">Manage Exams</h1>
+
+    <div id="toastBox" class="toast-container"></div>
+
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-primary text-white fw-bold">Add Exam</div>
+        <div class="card-body">
+            <form id="addExamForm">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="subject" class="form-label">Subject Name</label>
+                        <input type="text" id="subject" class="form-control" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="course_code" class="form-label">Course Code</label>
+                        <input type="text" id="course_code" class="form-control">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="batch" class="form-label">Batch</label>
+                        <input type="text" id="batch" class="form-control" placeholder="e.g., MCA 2025 AI&DS" required>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label for="semester" class="form-label">Semester</label>
+                        <input type="number" id="semester" class="form-control" min="1" max="10" required>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="exam_date" class="form-label">Exam Date</label>
+                        <input type="date" id="exam_date" class="form-control" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="session" class="form-label">Session</label>
+                        <select id="session" class="form-select" required>
+                            <option value="Morning">Morning</option>
+                            <option value="Afternoon">Afternoon</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label class="form-label">Exam Type</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="exam_type" id="type_theory" value="Theory" checked>
+                            <label class="form-check-label" for="type_theory">Theory</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="exam_type" id="type_lab" value="Lab">
+                            <label class="form-check-label" for="type_lab">Lab</label>
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-success mt-3">Add Exam</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card mb-4 shadow-sm border-warning">
+        <div class="card-header bg-warning fw-bold">Bulk Exam Scheduler (Reset/Update)</div>
+        <div class="card-body">
+            <p class="text-muted">To reset old exams for a new slot, use the filters below and set a new date.</p>
+            <form id="bulkUpdateForm" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label for="old_date" class="form-label">Old Exam Date (Filter)</label>
+                    <input type="date" id="old_date" class="form-control">
+                </div>
+                <div class="col-md-3">
+                    <label for="old_session" class="form-label">Old Session (Filter)</label>
+                    <select id="old_session" class="form-select">
+                        <option value="">Any Session</option>
+                        <option value="Morning">Morning</option>
+                        <option value="Afternoon">Afternoon</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="new_date" class="form-label">New Exam Date</label>
+                    <input type="date" id="new_date" class="form-control" required>
+                </div>
+                <div class="col-md-2 d-grid">
+                    <button type="submit" class="btn btn-warning">Update All</button>
+                </div>
+            </form>
+            <div class="form-check mt-3">
+                <input class="form-check-input" type="checkbox" id="reset_session">
+                <label class="form-check-label text-muted" for="reset_session">
+                    Check this box to **Reset Session** (Set all updated sessions to 'Morning').
+                </label>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card mb-4 shadow-sm border-danger">
+        <div class="card-header bg-danger text-white fw-bold">Bulk Delete Exams</div>
+        <div class="card-body">
+            <p class="text-danger">
+                <strong>Warning:</strong> This will permanently delete all exams matching the filter.
+                This is useful for clearing out an entire old semester.
+            </p>
+            <form id="bulkDeleteForm" class="row g-3 align-items-end">
+                <div class="col-md-5">
+                    <label for="delete_date" class="form-label">Filter: Delete all exams ON or BEFORE</label>
+                    <input type="date" id="delete_date" class="form-control">
+                </div>
+                <div class="col-md-5">
+                    <label for="delete_session" class="form-label">Filter: And in Session</label>
+                    <select id="delete_session" class="form-select">
+                        <option value="">Any Session</option>
+                        <option value="Morning">Morning</option>
+                        <option value="Afternoon">Afternoon</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-grid">
+                    <button type="submit" class="btn btn-danger">Delete All</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="card shadow-sm">
+        <div class="card-header bg-secondary text-white fw-bold">Exam List</div>
+        <div class="card-body">
+            
+            <div class="row g-3 mb-3">
+                <div class="col-md-8">
+                    <label for="tableSearchInput" class="form-label">Search</label>
+                    <input type="text" id="tableSearchInput" class="form-control" placeholder="Search by subject, code, batch...">
+                </div>
+                <div class="col-md-4">
+                    <label for="deptFilter" class="form-label">Filter by Department</label>
+                    <select id="deptFilter" class="form-select">
+                         <option value="all">All Departments</option>
+                        <option value="BBA">BBA</option>
+                        <option value="Commerce">Commerce</option>
+                        <option value="Computer Science">Computer Science</option>
+                        <option value="English">English</option>
+                        <option value="Mathematics">Mathematics</option>
+                        <option value="Physics">Physics</option>
+                        <option value="Visual Media">Visual Media</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped" id="examsTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Subject</th>
+                            <th>Course Code</th>
+                            <th>Batch</th>
+                            <th>Dept.</th>
+                            <th>Sem</th>
+                            <th>Type</th>
+                            <th>Date</th>
+                            <th>Session</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="examsTableBody"></tbody> 
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// This object contains all rules from all departments
+const batchRules = {
+    "Int MCA 2021 Batch A": { dept: "Computer Science" },
+    "Int MCA 2021 Batch B": { dept: "Computer Science" },
+    "Int MCA 2021 Batch C": { dept: "Computer Science" },
+    "Int MCA 2022 Batch A": { dept: "Computer Science" },
+    "Int MCA 2022 Batch B": { dept: "Computer Science" },
+    "2023 BCA Data Science": { dept: "Computer Science" },
+    "2023 Int MCA A Batch": { dept: "Computer Science" },
+    "2023 BCA A": { dept: "Computer Science" },
+    "2023 BCA B": { dept: "Computer Science" },
+    "2023 Int MCA B Batch": { dept: "Computer Science" },
+    "2024 BCA A (H)": { dept: "Computer Science" },
+    "2024 BCA B (H)": { dept: "Computer Science" },
+    "2024 BCA C (H)": { dept: "Computer Science" },
+    "2024 MCA III Semester Batch A": { dept: "Computer Science" },
+    "2024 MCA III Semester Batch B": { dept: "Computer Science" },
+    "MCA 2025 Regular": { dept: "Computer Science" },
+    "MCA 2025 AI&DS": { dept: "Computer Science" },
+    "MCA 2025 Cybersecurity": { dept: "Computer Science" },
+    "2021 Int M.Sc Mathematics IX Semester": { dept: "Mathematics" },
+    "2022 Int M.Sc Mathematics VII Semester": { dept: "Mathematics" },
+    "2024 M.Sc Applied Statistics and Data Analytics III Semester": { dept: "Mathematics" },
+    "2024 M.Sc Data Science with Logistics and Supply Chain Management III Semester": { dept: "Mathematics" },
+    "2025 M.Sc Applied Statistics and Data Analytics I Sem": { dept: "Mathematics" },
+    "2023 Int. MA English Language and Literature V Semester": { dept: "English" },
+    "2021 Int. MA English Language and Literature IX Semester": { dept: "English" },
+    "2024 MA English Language and Literature III Semester": { dept: "English" },
+    "2021 Int. M.Sc. Physics IX Semester": { dept: "Physics" },
+    "2022 Int. M.Sc. Physics VII Semester": { dept: "Physics" },
+    "2023 Int. M.Sc. Physics V Semester": { dept: "Physics" },
+    "2024 B.Sc. (H) Applied Physics III Semester": { dept: "Physics" },
+    "2025 B.Des. (Honours) I Semester": { dept: "Visual Media" },
+    "2025 B.Sc. VM I Semester": { dept: "Visual Media" },
+    "2024 B.Des. III Semester": { dept: "Visual Media" },
+    "2024 B.Sc. VM III Semester": { dept: "Visual Media" },
+    "2023 B.Des. V Semester": { dept: "Visual Media" },
+    "2023 B.Sc. VM V Semester": { dept: "Visual Media" },
+    "2022 B.Des. VII semester": { dept: "Visual Media" },
+    "2025 MA JMC I Semester": { dept: "Visual Media" },
+    "2025 MA (VMC) I Semester": { dept: "Visual Media" },
+    "2025 MFA AAA I Semester": { dept: "Visual Media" },
+    "2024 MA JMC III Semester": { dept: "Visual Media" },
+    "2024 MA VMC III Semester": { dept: "Visual Media" },
+    "2024 MFA AAA": { dept: "Visual Media" },
+    "2024 MFA AVFX": { dept: "Visual Media" },
+    "2024 M.Com. Finance and Systems III Semester": { dept: "Commerce" },
+    "2025 M.Com. Finance and Systems I Semester": { dept: "Commerce" },
+    "2022 B.Com. (FINTECH) VII Semester": { dept: "Commerce" },
+    "2023 B.Com. (FINTECH) V Semester": { dept: "Commerce" },
+    "2023 B.Com. (TAXATION & FINANCE) V Semester": { dept: "Commerce" },
+    "2023 BBA V Semester": { dept: "BBA" },
+    "2024 B.Com. (FINTECH) III Semester": { dept: "Commerce" },
+    "2024 B.Com. (TAXATION & FINANCE) III Semester": { dept: "Commerce" },
+    "2024 BBA III Semester": { dept: "BBA" },
+    "2025 B.Com.(Honours) with Research in FINTECH I Semester - Hindi": { dept: "Commerce" },
+    "2025 B.Com.(Honours) with Research in FINTECH I Semester - Sanskrit": { dept: "Commerce" },
+    "2025 B.Com.(Honours) with Research in FINTECH I Semester - Malayalam": { dept: "Commerce" },
+    "2025 B.Com with ACCA I Semester - Hindi": { dept: "Commerce" },
+    "2025 B.Com with ACCA I Semester - Sanskrit": { dept: "Commerce" },
+    "2025 B.Com with ACCA I Semester - Malayalam": { dept: "Commerce" },
+    "2025 BBA (Honours) I Semester - Hindi": { dept: "BBA" },
+    "2025 BBA (Honours) I Semester - Sanskrit": { dept: "BBA" },
+    "2025 BBA (Honours) I Semester - Malayalam": { dept: "BBA" },
+    "2025 BCA Honours A - Hindi": { dept: "Computer Science" },
+    "2025 BCA Honours A - Sanskrit": { dept: "Computer Science" },
+    "2025 BCA Honours A - Malayalam": { dept: "Computer Science" },
+    "2025 BCA Honours B - Hindi": { dept: "Computer Science" },
+    "2025 BCA Honours B - Sanskrit": { dept: "Computer Science" },
+    "2025 BCA Honours B - Malayalam": { dept: "Computer Science" },
+    "2025 BCA Honours C - Hindi": { dept: "Computer Science" },
+    "2025 BCA Honours C - Sanskrit": { dept: "Computer Science" },
+    "2025 BCA Honours C - Malayalam": { dept: "Computer Science" },
+    "2025 BCA Honours D - Hindi": { dept: "Computer Science" },
+    "2025 BCA Honours D - Sanskrit": { dept: "Computer Science" },
+    "2025 BCA Honours D - Malayalam": { dept: "Computer Science" },
+    "2025 B.Des. (Honours) I Semester - Hindi": { dept: "Visual Media" },
+    "2025 B.Des. (Honours) I Semester - Sanskrit": { dept: "Visual Media" },
+    "2025 B.Des. (Honours) I Semester - Malayalam": { dept: "Visual Media" },
+    "2025 B.Sc. VM I Semester - Hindi": { dept: "Visual Media" },
+    "2025 B.Sc. VM I Semester - Sanskrit": { dept: "Visual Media" },
+    "2025 B.Sc. VM I Semester - Malayalam": { dept: "Visual Media" }
+};
+
+// 🔔 Custom Toast Function
+function showToast(message, type = 'info') {
+    const toast = $(`
+        <div class="toast align-items-center text-white bg-${type} border-0 mb-2" role="alert">
+            <div class="d-flex">
+                <div class="toast-body">${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    `);
+    $("#toastBox").append(toast);
+    const bsToast = new bootstrap.Toast(toast[0], { delay: 3000 });
+    bsToast.show();
+    toast.on('hidden.bs.toast', () => toast.remove());
+}
+
+function loadExams() {
+    $.get("../backend/exams.php", function(data) {
+        if (data.success) {
+            let rows = '';
+            data.exams.forEach(e => {
+                const rule = batchRules[e.batch];
+                const department = rule ? rule.dept : 'Unknown';
+                
+                const examData = htmlspecialchars(JSON.stringify(e)); 
+                rows += `<tr data-department="${department}">
+                    <td>${e.id}</td>
+                    <td>${e.subject}</td>
+                    <td>${e.course_code || ''}</td>
+                    <td>${e.batch}</td>
+                    <td>${department}</td>
+                    <td>${e.semester}</td>
+                    <td>${e.exam_type}</td>
+                    <td>${e.exam_date}</td>
+                    <td>${e.session}</td>
+                    <td>
+                        <button class="btn btn-warning btn-sm edit-btn" data-exam='${examData}'>Edit</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteExam(${e.id})">Delete</button>
+                    </td>
+                </tr>`;
+            });
+            $("#examsTableBody").html(rows);
+            applyFilters();
+        } else {
+            showToast("Failed to load exams: " + data.message, "danger");
+        }
+    }, "json");
+}
+
+$("#addExamForm").submit(function(e) {
+    e.preventDefault();
+    const examType = $('input[name="exam_type"]:checked').val(); 
+    $.ajax({
+        url: "../backend/exams.php",
+        method: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({
+            subject: $("#subject").val(),
+            course_code: $("#course_code").val(),
+            batch: $("#batch").val(),
+            semester: parseInt($("#semester").val()),
+            exam_date: $("#exam_date").val(),
+            session: $("#session").val(),
+            exam_type: examType
+        }),
+        success: function(res) {
+            if (res.success) {
+                showToast("Exam added successfully!", "success");
+                loadExams();
+                $("#addExamForm")[0].reset();
+            } else {
+                showToast(res.message || "Error adding exam", "danger");
+            }
+        },
+        error: (jqXHR) => showToast(jqXHR.responseJSON.message || "Server error.", "danger")
+    });
+});
+
+$(document).on("click", ".edit-btn", function() {
+    const e = JSON.parse($(this).attr("data-exam"));
+    
+    let newSubject = prompt("Edit Subject:", e.subject);
+    let newCourseCode = prompt("Edit Course Code:", e.course_code || '');
+    let newBatch = prompt("Edit Batch:", e.batch);
+    let newSem = prompt("Edit Semester:", e.semester);
+    let newDate = prompt("Edit Date (YYYY-MM-DD):", e.exam_date);
+    let newSession = prompt("Edit Session (Morning/Afternoon):", e.session);
+    let newExamType = prompt("Edit Type (Theory/Lab):", e.exam_type);
+
+    if (newSubject !== null && newDate !== null && newBatch !== null && newSem !== null) {
+        $.ajax({
+            url: "../backend/exams.php",
+            method: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({
+                _method: "PUT",
+                id: e.id,
+                subject: newSubject,
+                course_code: newCourseCode,
+                batch: newBatch,
+                semester: parseInt(newSem),
+                exam_date: newDate,
+                session: newSession,
+                exam_type: newExamType
+            }),
+            success: function(res) {
+                if (res.success) {
+                    showToast("Exam updated!", "success");
+                    loadExams();
+                } else {
+                    showToast(res.message || "Error updating exam", "danger");
+                }
+            },
+            error: (jqXHR) => showToast(jqXHR.responseJSON.message || "Server error.", "danger")
+        });
+    }
+});
+
+function deleteExam(id) {
+    if (confirm("Are you sure you want to delete this exam?")) {
+        $.ajax({
+            url: "../backend/exams.php", 
+            method: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({ 
+                id: id,
+                _method: "DELETE" 
+            }),
+            success: function(res) {
+                if (res.success) {
+                    showToast("Exam deleted!", "success");
+                    loadExams();
+                } else {
+                    showToast(res.message || "Error deleting exam", "danger");
+                }
+            },
+            error: (jqXHR) => showToast(jqXHR.responseJSON.message || "Server error.", "danger")
+        });
+    }
+}
+
+$("#bulkUpdateForm").submit(function(e) {
+    e.preventDefault();
+    const oldDate = $("#old_date").val();
+    const oldSession = $("#old_session").val();
+    const newDate = $("#new_date").val();
+    const resetSession = $("#reset_session").is(':checked');
+
+    if (!newDate) {
+        showToast("A new date is required for the update.", "warning");
+        return;
+    }
+    if (!oldDate && !oldSession) {
+        showToast("Please provide at least an old date or old session filter.", "warning");
+        return;
+    }
+    
+    if (confirm(`Are you sure you want to update all exams matching the filter to the new date of ${newDate}? This will permanently change the schedule.`)) {
+        $("button").prop("disabled", true); 
+        $.ajax({
+            url: "../backend/exams.php",
+            method: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({ 
+                _method: "BULK_UPDATE",
+                old_date: oldDate,
+                old_session: oldSession,
+                new_date: newDate,
+                reset_session: resetSession
+            }),
+            success: function(res) {
+                if (res.success) {
+                    showToast(`Successfully updated ${res.updated} exam(s)!`, "success");
+                    loadExams();
+                } else {
+                    showToast(res.message || "Bulk update failed.", "danger");
+                }
+            },
+            error: (jqXHR) => showToast(jqXHR.responseJSON.message || "Server error during update.", "danger"),
+            complete: () => $("button").prop("disabled", false)
+        });
+    }
+});
+
+// 💡 NEW BULK DELETE FUNCTION 💡
+$("#bulkDeleteForm").submit(function(e) {
+    e.preventDefault();
+    
+    const deleteDate = $("#delete_date").val();
+    const deleteSession = $("#delete_session").val();
+
+    if (!deleteDate && !deleteSession) {
+        showToast("Please provide at least a date or session to filter by.", "warning");
+        return;
+    }
+
+    let confirmMsg = "Are you sure you want to delete all exams";
+    if (deleteDate) confirmMsg += ` on or before ${deleteDate}`;
+    if (deleteSession) confirmMsg += ` in the ${deleteSession} session`;
+    confirmMsg += "? This cannot be undone.";
+
+    if (confirm(confirmMsg)) {
+        $("button").prop("disabled", true); 
+        $.ajax({
+            url: "../backend/exams.php",
+            method: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({ 
+                _method: "BULK_DELETE",
+                delete_date: deleteDate,
+                delete_session: deleteSession
+            }),
+            success: function(res) {
+                if (res.success) {
+                    showToast(`Successfully deleted ${res.deleted} exam(s)!`, "success");
+                    loadExams();
+                } else {
+                    showToast(res.message || "Bulk delete failed.", "danger");
+                }
+            },
+            error: (jqXHR) => showToast(jqXHR.responseJSON.message || "Server error during delete.", "danger"),
+            complete: () => $("button").prop("disabled", false)
+        });
+    }
+});
+
+// COMBINED FILTER/SEARCH FUNCTION
+function applyFilters() {
+    const searchText = $("#tableSearchInput").val().toLowerCase();
+    const deptFilter = $("#deptFilter").val();
+
+    $("#examsTableBody tr").filter(function() {
+        const row = $(this);
+        const rowText = row.text().toLowerCase();
+        const rowDept = row.data("department");
+
+        const deptMatch = (deptFilter === 'all') || (rowDept === deptFilter);
+        const textMatch = (rowText.indexOf(searchText) > -1);
+
+        row.toggle(deptMatch && textMatch);
+    });
+}
+
+// HOOK UP FILTERS
+$("#tableSearchInput").on("keyup", applyFilters);
+$("#deptFilter").on("change", applyFilters);
+
+function htmlspecialchars(str) {
+    if (typeof str !== 'string') return '';
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
+// Initial load
+$(document).ready(loadExams);
+</script>
+</body>
+</html>

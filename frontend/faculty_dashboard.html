@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faculty Dashboard - Hallmate</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        /* ... [Your CSS is all correct and unchanged] ... */
+        body { background-color: #f8fafc; }
+        .card {
+            border-radius: 10px;
+            transition: transform 0.2s ease-in-out;
+            border: 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,.05);
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .card-header {
+            background-color: #0d6efd !important;
+            border-radius: 10px 10px 0 0 !important;
+        }
+        .card-footer {
+            background-color: #fff;
+            border-top: 1px solid #eee;
+        }
+        .page-header {
+            font-weight: 700;
+            color: #333;
+        }
+        .seat-grid {
+            display: grid;
+            gap: 10px;
+            padding: 20px;
+            background-color: #f1f3f5;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            overflow-x: auto;
+            max-width: fit-content;
+            margin: auto;
+        }
+        .seat {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 600;
+            border-radius: 5px;
+            color: #495057;
+            border: 1px solid #adb5bd;
+            position: relative;
+            box-sizing: border-box;
+        }
+        .seat-grid.single .seat {
+            width: 50px;
+            height: 50px;
+        }
+        .seat-grid.double .seat {
+            width: 100px;
+            height: 50px;
+            display: flex;
+            padding: 0;
+            border: none;
+            background-color: transparent;
+        }
+        .seat-grid.double .bench-side {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            border: 1px solid #adb5bd;
+            background-color: #ced4da;
+            box-sizing: border-box;
+            border-radius: 0;
+            color: #495057;
+        }
+        .seat-grid.double .bench-side.left { border-radius: 5px 0 0 5px; border-right: none; }
+        .seat-grid.double .bench-side.right { border-radius: 0 5px 5px 0; border-left: none; }
+        .seat.occupied {
+            background-color: #ffffff;
+            border-color: #adb5bd;
+            cursor: help; 
+        }
+        .seat.empty {
+            background-color: #ced4da;
+            color: #495057;
+        }
+        .seat-grid.double .bench-side.occupied-side {
+            background-color: #ffffff; 
+            border-color: #adb5bd;
+            cursor: help;
+        }
+        .popover {
+            font-size: 0.85rem;
+        }
+        .popover-header {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="bg-light">
+
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h1 class="page-header">Faculty Dashboard</h1>
+      <button class="btn btn-outline-danger" onclick="logout()">Logout</button>
+    </div>
+    <p class="text-muted fs-5 mb-4">My Invigilation Schedule</p>
+
+    <div id="scheduleContainer" class="row g-4">
+    </div>
+
+    <div class="card mt-5" id="studentListCard" style="display: none;">
+        <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+            <span id="studentListHeader">Students in Hall</span>
+            <button type="button" class="btn-close btn-close-white" onclick="closeStudentList()"></button>
+        </div>
+        <div class="card-body">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Seat No</th>
+                        <th>Register No</th>
+                        <th>Student Name</th>
+                        <th>Subject</th> 
+                    </tr>
+                </thead>
+                <tbody id="studentTableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="seatingModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="seatingModalTitle">Seating Layout</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="text-center mb-3">
+            <span class="badge bg-light text-dark border me-2">Occupied</span>
+            <span class="badge bg-secondary">Empty</span>
+        </div>
+        <div id="seatMapContainer" class="d-flex justify-content-center">
+            <div class="spinner-border" role="status"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // ... [loadSchedule, loadStudentsInHall, and closeStudentList functions are correct and unchanged] ...
+    async function loadSchedule() {
+        try {
+            const response = await fetch('../backend/faculty_dashboard.php?action=getSchedule');
+            const data = await response.json();
+            const scheduleContainer = document.getElementById('scheduleContainer');
+            scheduleContainer.innerHTML = ''; 
+
+            if (data.success) {
+                if (data.schedule.length === 0) {
+                    scheduleContainer.innerHTML = '<div class="col-12"><div class="alert alert-info text-center">You have no assigned duties.</div></div>';
+                } else {
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0); 
+                    
+                    const groupedDuties = {};
+                    data.schedule.forEach(duty => {
+                        const key = `${duty.exam_date}|${duty.session}|${duty.room_no}`;
+                        if (!groupedDuties[key]) {
+                            groupedDuties[key] = {
+                                exam_date: duty.exam_date,
+                                session: duty.session,
+                                room_no: duty.room_no,
+                                room_id: duty.room_id, 
+                                exam_id: duty.exam_id, // Use the first exam_id as the representative
+                                exams: []
+                            };
+                        }
+                        groupedDuties[key].exams.push({ 
+                            subject: duty.subject, 
+                            course_code: duty.course_code 
+                        });
+                    });
+                    
+                    for (const key in groupedDuties) {
+                        const slot = groupedDuties[key];
+                        const examDate = new Date(slot.exam_date + 'T00:00:00');
+                        
+                        let actionButtons = '';
+                        if (examDate < today) {
+                            actionButtons = '<span class="badge bg-secondary fs-6">Completed</span>';
+                        } else {
+                            actionButtons = `
+                                <button class="btn btn-primary btn-sm" onclick="showFacultySeatingMap(${slot.room_id}, ${slot.exam_id}, '${slot.room_no}')">
+                                    <i class="bi bi-grid-3x3-gap-fill"></i> View Map
+                                </button>
+                                <button class="btn btn-info btn-sm" onclick="loadStudentsInHall(${slot.exam_id}, ${slot.room_id}, '${slot.room_no}')">
+                                    <i class="bi bi-people-fill"></i> View List
+                                </button>
+                            `;
+                        }
+                        
+                        let subjectList = slot.exams.map(e => `
+                            <p class="mb-1">
+                                <strong>${e.subject}</strong>
+                                <small class="text-muted">(${e.course_code || 'N/A'})</small>
+                            </p>
+                        `).join('');
+
+                        const card = `
+                        <div class="col-md-6 col-lg-4">
+                            <div class="card h-100 shadow-sm">
+                                <div class="card-header text-white">
+                                    <h5 class="card-title mb-0">Exam Slot: ${slot.room_no}</h5>
+                                </div>
+                                <div class="card-body">
+                                    ${subjectList} <hr>
+                                    <p class="mb-1"><strong><i class="bi bi-calendar-event"></i> Date:</strong> ${slot.exam_date}</p>
+                                    <p class="mb-0"><strong><i class="bi bi-clock"></i> Session:</strong> ${slot.session}</p>
+                                </div>
+                                <div class="card-footer d-flex justify-content-end gap-2">
+                                    ${actionButtons}
+                                </div>
+                            </div>
+                        </div>`;
+                        scheduleContainer.innerHTML += card;
+                    }
+                }
+            } else {
+                if (response.status === 401) {
+                    window.location.href = "login.html";
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            }
+        } catch (error) {
+            console.error('Failed to load schedule:', error);
+            alert('A network error occurred. Please try again.');
+        }
+    }
+
+    async function loadStudentsInHall(examId, roomId, roomNo) {
+        try {
+            const response = await fetch(`../backend/faculty_dashboard.php?action=getStudentsInHall&exam_id=${examId}&room_id=${roomId}`);
+            const data = await response.json();
+            
+            if (data.success) {
+                const studentBody = document.getElementById('studentTableBody');
+                const studentCard = document.getElementById('studentListCard');
+                const studentHeader = document.getElementById('studentListHeader');
+
+                studentHeader.textContent = `Students in Hall ${roomNo}`;
+                studentBody.innerHTML = ''; 
+
+                if (data.students.length === 0) {
+                    studentBody.innerHTML = '<tr><td colspan="4" class="text-center">No students assigned to this hall.</td></tr>';
+                } else {
+                    data.students.forEach(student => {
+                        const row = `<tr>
+                            <td>${student.seat_no}</td>
+                            <td>${student.reg_no}</td>
+                            <td>${student.student_name}</td>
+                            <td>${student.subject}</td> 
+                        </tr>`;
+                        studentBody.innerHTML += row;
+                    });
+                }
+                studentCard.style.display = 'block';
+                studentCard.scrollIntoView({ behavior: 'smooth' });
+            } else {
+                alert('Error: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Failed to load students:', error);
+            alert('A network error occurred. Please try again.');
+        }
+    }
+
+    function closeStudentList() {
+        document.getElementById('studentListCard').style.display = 'none';
+    }
+
+
+    // ---
+    // --- THIS FUNCTION IS NOW UPDATED ---
+    // ---
+    async function showFacultySeatingMap(roomId, examId, roomName) {
+        const modal = new bootstrap.Modal(document.getElementById('seatingModal'));
+        const title = document.getElementById('seatingModalTitle');
+        const container = document.getElementById('seatMapContainer');
+
+        title.textContent = `Seating Layout for Room: ${roomName}`;
+        container.innerHTML = '<div class="spinner-border text-primary" role="status"></div>';
+        modal.show();
+
+        try {
+            const response = await fetch(`../backend/get_room_layout.php?room_id=${roomId}&exam_id=${examId}`);
+            const data = await response.json();
+            if (!data.success) throw new Error(data.error);
+
+
+            // ---
+            // --- 💡 NEW FIX: CALCULATE ROW/COL FROM SEAT_NO 💡 ---
+            // ---
+            const totalCols = data.room.total_cols;
+            data.allocations.forEach(alloc => {
+                // Example seat_no: "A503-16-L"
+                const parts = alloc.seat_no.split('-'); // ["A503", "16", "L"]
+                if (parts.length >= 2) {
+                    const seatNum = parseInt(parts[1]); // 16
+                    if (!isNaN(seatNum)) {
+                        // Calculate grid position from seat number
+                        alloc.seat_row = Math.floor((seatNum - 1) / totalCols) + 1;
+                        alloc.seat_col = ((seatNum - 1) % totalCols) + 1;
+                    }
+                }
+            });
+            // --- END OF FIX ---
+
+
+            container.innerHTML = ""; 
+            const grid = document.createElement('div');
+            grid.className = 'seat-grid';
+            
+            grid.style.gridTemplateColumns = `repeat(${data.room.total_cols}, 1fr)`;
+            grid.classList.add(data.room.seating_type); 
+
+            const occupiedSeats = {};
+            data.allocations.forEach(alloc => {
+                const baseKey = `${alloc.seat_row}_${alloc.seat_col}`;
+                if (data.room.seating_type === 'single') {
+                    occupiedSeats[baseKey] = alloc;
+                } else if (data.room.seating_type === 'double') {
+                    const side = alloc.seat_no.endsWith('-L') ? 'L' : 'R';
+                    occupiedSeats[`${baseKey}_${side}`] = alloc;
+                }
+            });
+
+            for (let r = 1; r <= data.room.total_rows; r++) {
+                for (let c = 1; c <= data.room.total_cols; c++) {
+                    const seatDiv = document.createElement('div');
+                    seatDiv.className = 'seat';
+
+                    if (data.room.seating_type === 'single') {
+                        const seatKey = `${r}_${c}`;
+                        const alloc = occupiedSeats[seatKey];
+                        
+                        if (alloc) {
+                            seatDiv.textContent = alloc.seat_no.split('-').pop(); 
+                            seatDiv.classList.add('occupied');
+                            addPopover(seatDiv, alloc); 
+                        } else {
+                            seatDiv.textContent = `Empty`; 
+                            seatDiv.classList.add('empty');
+                        }
+                    } else if (data.room.seating_type === 'double') {
+                        const benchKey = `${r}_${c}`;
+                        const seatL = occupiedSeats[`${benchKey}_L`];
+                        const seatR = occupiedSeats[`${benchKey}_R`];
+
+                        const benchL = document.createElement('div');
+                        benchL.className = 'bench-side left';
+                        if (seatL) {
+                            benchL.textContent = seatL.seat_no.split('-').pop(); 
+                            benchL.classList.add('occupied-side');
+                            addPopover(benchL, seatL);
+                        } else {
+                            benchL.textContent = `Empty L`;
+                        }
+                        seatDiv.appendChild(benchL);
+
+                        const benchR = document.createElement('div');
+                        benchR.className = 'bench-side right';
+                        if (seatR) {
+                            benchR.textContent = seatR.seat_no.split('-').pop(); 
+                            benchR.classList.add('occupied-side');
+                            addPopover(benchR, seatR);
+                        } else {
+                            benchR.textContent = `Empty R`;
+                        }
+                        seatDiv.appendChild(benchR);
+                    }
+                    grid.appendChild(seatDiv);
+                }
+            }
+            container.appendChild(grid);
+            
+            const popoverTriggerList = [].slice.call(container.querySelectorAll('[data-bs-toggle="popover"]'));
+            popoverTriggerList.map(function (popoverTriggerEl) {
+                return new bootstrap.Popover(popoverTriggerEl, { trigger: 'hover' });
+            });
+
+        } catch (error) {
+            console.error("Error fetching seating map:", error);
+            container.innerHTML = `<div class="alert alert-danger">Error loading map: ${error.message}</div>`;
+        }
+    }
+    // --- END OF UPDATED FUNCTION ---
+
+
+    // --- THIS FUNCTION IS ALSO UPDATED ---
+    function addPopover(element, alloc) {
+        // Safely handle null student names
+        const studentName = alloc.student_name || 'Unknown Student';
+
+        element.setAttribute('data-bs-toggle', 'popover');
+        element.setAttribute('data-bs-trigger', 'hover');
+        element.setAttribute('data-bs-placement', 'top');
+        element.setAttribute('data-bs-title', `Seat: ${alloc.seat_no}`);
+        element.setAttribute('data-bs-content', `Student: ${studentName} (ID: ${alloc.student_id})`);
+    }
+
+    function logout() {
+        fetch('../backend/logout.php')
+            .then(() => {
+                window.location.href = 'login.html';
+            });
+    }
+
+    document.addEventListener('DOMContentLoaded', loadSchedule);
+</script>
+</body>
+</html>

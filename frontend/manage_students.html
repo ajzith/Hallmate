@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Manage Students - Hallmate</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<style>
+    body { background-color: #f8f9fa; }
+    .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+    }
+</style>
+</head>
+<body>
+
+<div class="container mt-5">
+    <h1 class="mb-4 fw-bold text-center">Manage Students</h1>
+
+    <div id="toastBox" class="toast-container"></div>
+
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-primary text-white fw-bold">Add Student (Creates Login)</div>
+        <div class="card-body">
+            <form id="addStudentForm">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <input type="text" id="reg_no" class="form-control" placeholder="Register Number (Unique)" required>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" id="name" class="form-control" placeholder="Full Name" required>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="email" id="email" class="form-control" placeholder="Email Address" required>
+                    </div>
+                    <div class="col-md-3">
+                        <select id="course" class="form-select" required>
+                            <option value="">Select Course</option>
+                            <optgroup label="Computer Science">
+                                <option value="Int MCA 2021 Batch A">Int MCA 2021 Batch A</option>
+                                <option value="Int MCA 2021 Batch B">Int MCA 2021 Batch B</option>
+                                </optgroup>
+                             <optgroup label="Mathematics">
+                                <option value="2021 Int M.Sc Mathematics IX Semester">2021 Int M.Sc Mathematics IX Semester</option>
+                                </optgroup>
+                            </select>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" id="batch" class="form-control" placeholder="Batch Year (e.g., 2023)" required>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" id="department" class="form-control" placeholder="Department" required>
+                    </div>
+                    <div class="col-md-2">
+                        <input type="number" id="semester" class="form-control" placeholder="Semester" min="1" max="10" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-success mt-3 px-4">Add Student</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card mb-4 shadow-sm border-warning">
+        <div class="card-header bg-warning fw-bold">Bulk Actions</div>
+        <div class="card-body d-flex gap-3">
+            <button class="btn btn-primary" onclick="approveSelectedStudents()">Approve Selected</button>
+            <button class="btn btn-danger" onclick="promoteAllStudents()">
+                Promote All Students to Next Semester
+            </button>
+        </div>
+    </div>
+    
+    <div class="card shadow-sm">
+        <div class="card-header bg-secondary text-white fw-bold">Student List</div>
+        <div class="card-body">
+            
+            <div class="mb-3">
+                <input type="text" id="tableSearchInput" class="form-control" placeholder="Search for any student by name, reg no, course...">
+            </div>
+            
+            <div class="table-responsive"> 
+                <table class="table table-bordered align-middle" id="studentsTable">
+                    <thead class="table-dark">
+                        <tr>
+                            <th><input type="checkbox" id="selectAllCheckbox"></th>
+                            <th>Status</th>
+                            <th>Reg No</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Course</th>
+                            <th>Batch Year</th>
+                            <th>Department</th>
+                            <th>Semester</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentsTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 🔔 Custom Toast Function
+function showToast(message, type = 'info') {
+    const toast = $(`
+        <div class="toast align-items-center text-white bg-${type} border-0 mb-2" role="alert">
+            <div class="d-flex">
+                <div class="toast-body">${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    `);
+    $("#toastBox").append(toast);
+    const bsToast = new bootstrap.Toast(toast[0], { delay: 3000 });
+    bsToast.show();
+    toast.on('hidden.bs.toast', () => toast.remove());
+}
+
+function loadStudents() {
+    $.get("../backend/students.php", function(data) {
+        if (data.success) {
+            let rows = '';
+            data.students.forEach(s => {
+                const statusCell = s.is_approved == 1
+                    ? '<span class="badge bg-success">Approved</span>'
+                    : '<span class="badge bg-warning text-dark">Pending</span>';
+                
+                const studentData = htmlspecialchars(JSON.stringify(s));
+
+                rows += `
+                    <tr>
+                        <td>${s.is_approved == 0 ? `<input type="checkbox" class="student-checkbox" data-id="${s.id}" data-regno="${s.reg_no}" data-email="${s.email || ''}" data-name="${htmlspecialchars(s.name)}">` : ''}</td>
+                        <td>${statusCell}</td>
+                        <td>${s.reg_no}</td>
+                        <td>${s.name}</td>
+                        <td>${s.email || 'N/A'}</td>
+                        <td>${s.course_name || 'N/A'}</td> <td>${s.batch}</td>
+                        <td>${s.department}</td>
+                        <td>${s.semester}</td>
+                        <td>
+                            <button class="btn btn-warning btn-sm edit-btn" data-student='${studentData}'>Edit</button>
+                            <button class="btn btn-danger btn-sm delete-btn" data-id="${s.id}">Delete</button>
+                        </td>
+                    </tr>`;
+            });
+            $("#studentsTableBody").html(rows);
+        } else showToast("Failed to load students.", "danger");
+    }, "json");
+}
+
+$("#addStudentForm").submit(function(e) {
+    e.preventDefault();
+    $.ajax({
+        url: "../backend/students.php",
+        method: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({
+            reg_no: $("#reg_no").val(),
+            name: $("#name").val(),
+            email: $("#email").val(),
+            course_name: $("#course").val(),
+            batch: $("#batch").val(),    
+            department: $("#department").val(),
+            semester: parseInt($("#semester").val()) || null
+        }),
+        success: function(res) {
+            if (res.success) {
+                showToast(`Student added successfully! Default password: ${res.default_password}`, "success");
+                loadStudents();
+                $("#addStudentForm")[0].reset();
+            } else {
+                showToast(res.error || "Error adding student", "danger");
+            }
+        },
+        error: (jqXHR) => {
+            let errorMsg = "Server error while adding student.";
+            if (jqXHR.responseJSON && jqXHR.responseJSON.error) {
+                errorMsg = jqXHR.responseJSON.error;
+            }
+            showToast(errorMsg, "danger");
+        }
+    });
+});
+
+function approveSelectedStudents() {
+    const selectedStudents = $(".student-checkbox:checked").map(function() {
+        return { 
+            id: $(this).data("id"), 
+            reg_no: $(this).data("regno"),
+            email: $(this).data("email"),
+            name: $(this).data("name")
+        };
+    }).get();
+
+    if (selectedStudents.length === 0) {
+        showToast("Please select at least one student to approve.", "warning");
+        return;
+    }
+    
+    if (confirm(`Are you sure you want to approve ${selectedStudents.length} students?`)) {
+        $.ajax({
+            url: "../backend/students.php?action=approve_bulk",
+            method: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({ students: selectedStudents }),
+            success: function(res) {
+                if (res.success) {
+                    showToast(`${selectedStudents.length} students approved successfully!`, "success");
+                    loadStudents();
+                } else showToast(res.error || "Approval failed.", "danger");
+            },
+            error: () => showToast("Server error during approval.", "danger")
+        });
+    }
+}
+
+$(document).on("click", ".edit-btn", function() {
+    const s = JSON.parse($(this).attr("data-student"));
+    
+    let newName = prompt("Edit Name:", s.name);
+    let newEmail = prompt("Edit Email:", s.email);
+    let newCourse = prompt("Edit Course:", s.course_name); 
+    let newBatch = prompt("Edit Batch Year:", s.batch);
+    let newSem = prompt("Edit Semester:", s.semester);
+
+    if (newName !== null) { 
+        $.ajax({
+            url: "../backend/students.php?_method=PUT",
+            method: "POST", 
+            contentType: "application/json",
+            data: JSON.stringify({
+                id: s.id,
+                reg_no: s.reg_no, 
+                name: newName,
+                email: newEmail,
+                course_name: newCourse, 
+                batch: newBatch,
+                department: s.department, 
+                semester: parseInt(newSem) || null
+            }),
+            success: res => res.success ? (showToast("Student updated!", "success"), loadStudents()) : showToast(res.error || "Error updating student", "danger"),
+            error: (jqXHR) => {
+                let errorMsg = "Error updating student.";
+                if (jqXHR.responseJSON && jqXHR.responseJSON.error) {
+                    errorMsg = jqXHR.responseJSON.error;
+                }
+                showToast(errorMsg, "danger");
+            }
+        });
+    }
+});
+
+$(document).on("click", ".delete-btn", function() {
+    const id = $(this).data("id");
+    if (confirm("Are you sure you want to delete this student?")) {
+        $.ajax({
+            url: "../backend/students.php?_method=DELETE",
+            method: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({ id }),
+            success: res => res.success ? (showToast("Student deleted.", "success"), loadStudents()) : showToast(res.error || "Error deleting student", "danger"),
+            error: () => showToast("Server error while deleting.", "danger")
+        });
+    }
+});
+
+// 💡 NEW "PROMOTE ALL" FUNCTION 💡
+function promoteAllStudents() {
+    if (confirm("Are you sure you want to promote ALL students to the next semester?\n\nThis will add +1 to every student's semester number (e.g., Sem 5 -> Sem 6). This cannot be undone.")) {
+        
+        $("button").prop("disabled", true); 
+
+        $.ajax({
+            url: "../backend/students.php?action=promote_all", // New action
+            method: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({ confirm: true }), // Send confirmation
+            success: function(res) {
+                if (res.success) {
+                    showToast(`Successfully promoted ${res.affected} students!`, "success");
+                    loadStudents(); // Refresh the table to see new semester numbers
+                } else {
+                    showToast(res.error || "Promotion failed.", "danger");
+                }
+            },
+            error: (jqXHR) => showToast(jqXHR.responseJSON.error || "Server error.", "danger"),
+            complete: () => $("button").prop("disabled", false)
+        });
+    }
+}
+// 💡 END OF NEW FUNCTION 💡
+
+// SEARCH FUNCTION
+$("#tableSearchInput").on("keyup", function() {
+    const value = $(this).val().toLowerCase();
+    $("#studentsTableBody tr").filter(function() {
+        $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+    });
+});
+
+$("#selectAllCheckbox").on("click", function() {
+    $(".student-checkbox").prop("checked", $(this).prop("checked"));
+});
+
+function htmlspecialchars(str) {
+    if (typeof str !== 'string') return '';
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
+$(document).ready(loadStudents);
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

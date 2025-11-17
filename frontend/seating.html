@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Manage Seating - Hallmate</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<style>
+    /* ... [Your CSS styles are all correct] ... */
+    body { background-color: #f8f9fa; }
+    .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+    }
+    .seat-grid {
+        display: grid;
+        gap: 10px;
+        padding: 20px;
+        background-color: #f1f3f5;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        overflow-x: auto;
+        max-width: fit-content;
+        margin: auto;
+    }
+    .seat {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        font-weight: 600;
+        border-radius: 5px;
+        color: #495057;
+        border: 1px solid #adb5bd;
+        position: relative;
+        box-sizing: border-box;
+    }
+    .seat-grid.single .seat {
+        width: 50px;
+        height: 50px;
+    }
+    .seat-grid.double .seat {
+        width: 100px;
+        height: 50px;
+        display: flex;
+        padding: 0;
+        border: none;
+        background-color: transparent;
+    }
+    .seat-grid.double .bench-side {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        border: 1px solid #adb5bd;
+        background-color: #ced4da;
+        box-sizing: border-box;
+        border-radius: 0;
+        color: #495057;
+    }
+    .seat-grid.double .bench-side.left { border-radius: 5px 0 0 5px; border-right: none; }
+    .seat-grid.double .bench-side.right { border-radius: 0 5px 5px 0; border-left: none; }
+    .seat.occupied {
+        background-color: #ffffff;
+        border-color: #adb5bd;
+        cursor: help; 
+    }
+    .seat.empty {
+        background-color: #ced4da;
+        color: #495057;
+    }
+    .seat-grid.double .bench-side.occupied-side {
+        background-color: #ffffff; 
+        border-color: #adb5bd;
+        cursor: help;
+    }
+    .popover {
+        font-size: 0.85rem;
+    }
+    .popover-header {
+        font-weight: bold;
+    }
+</style>
+</head>
+<body class="bg-light">
+
+<div class="container mt-5">
+    <h1 class="mb-4 fw-bold text-center">Seating Allocation (Theory Exams)</h1>
+    <div id="toastBox" class="toast-container"></div>
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-primary text-white fw-bold">Generate Seating Plan</div>
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-8">
+                    <label for="examSelect" class="form-label">Select Theory Exam to Allocate</label>
+                    <select id="examSelect" class="form-select"></select>
+                </div>
+                <div class="col-md-4">
+                    <button class="btn btn-success w-100" onclick="generateSeating()">
+                        Generate Seating Plan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card shadow-sm">
+        <div class="card-header bg-secondary text-white fw-bold d-flex justify-content-between align-items-center">
+            Current Theory Seating Plan
+            <button class="btn btn-danger btn-sm" onclick="deleteAllTheorySeating()">
+                Delete All Theory Seating
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <input type="text" id="tableSearchInput" class="form-control" placeholder="Search for students, rooms, seat numbers...">
+            </div>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped" id="seatingTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Exam</th>
+                            <th>Room</th>
+                            <th>Student Name</th>
+                            <th>Seat No</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="seatingModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="seatingModalTitle">Seating Layout</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="text-center mb-3">
+            <span class="badge bg-light text-dark border me-2">Occupied</span>
+            <span class="badge bg-secondary">Empty</span>
+        </div>
+        <div id="seatMapContainer" class="d-flex justify-content-center">
+            <div class="spinner-border" role="status"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+// ... [Your showToast, loadSeatings, loadExams, generateSeating, deleteSeating, deleteAllTheorySeating, and tableSearchInput functions are all correct] ...
+function showToast(message, type = 'info') {
+    const toast = $(`
+        <div class="toast align-items-center text-white bg-${type} border-0 mb-2" role="alert">
+            <div class="d-flex">
+                <div class="toast-body">${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    `);
+    $("#toastBox").append(toast);
+    const bsToast = new bootstrap.Toast(toast[0], { delay: 3000 });
+    bsToast.show();
+    toast.on('hidden.bs.toast', () => toast.remove());
+}
+
+function loadSeatings() {
+    $.get("../backend/seating.php?type=Theory", function(data) {
+        if(data.success){
+            let rows = '';
+            data.seatings.forEach(s => {
+                rows += `<tr>
+                    <td>${s.id}</td>
+                    <td>${s.subject} (Exam ID:${s.exam_id})</td>
+                    <td>${s.room_no} (Room ID:${s.room_id})</td>
+                    <td>${s.student_name} (Student ID:${s.student_id})</td>
+                    <td>${s.seat_no}</td>
+                    <td>
+                        <button class="btn btn-danger btn-sm" onclick="deleteSeating(${s.id})">Delete</button>
+                        
+                        <button class="btn btn-info btn-sm" 
+                                onclick="showAdminSeatingMap(${s.room_id}, ${s.exam_id}, '${s.room_no}')">
+                            View
+                        </button>
+                    </td>
+                </tr>`;
+            });
+            $("#seatingTable tbody").html(rows);
+        } else {
+            showToast(data.error || "Failed to load seating plan", "danger");
+        }
+    }, "json");
+}
+
+function loadExams() {
+    $.get("../backend/exams.php?type=Theory", function(data) {
+        if (data.success) {
+            let options = '<option value="">-- Please select an exam --</option>';
+            data.exams.forEach(exam => {
+                options += `<option value="${exam.id}">${exam.subject} - ${exam.course_name || exam.batch}</option>`;
+            });
+            $("#examSelect").html(options);
+        }
+    }, "json");
+}
+function generateSeating() {
+    const exam_id = $("#examSelect").val();
+    if (!exam_id) {
+        showToast("Please select a theory exam first.", "warning"); return;
+    }
+    if (confirm("Are you sure? This will generate a new plan...")) {
+        $("button").prop("disabled", true);
+        $.ajax({
+            url: "../backend/generate_seating.php",
+            method: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({ exam_id: parseInt(exam_id) }),
+            success: function(res) {
+                if (res.success) {
+                    showToast(res.message || "Seating generated!", "success");
+                    loadSeatings();
+                } else {
+                    showToast("Error: " + res.error, "danger");
+                }
+            },
+            error: function(jqXHR) {
+                let errorMessage = "An unknown server error occurred.";
+                if (jqXHR.responseJSON && jqXHR.responseJSON.error) {
+                    errorMessage = jqXHR.responseJSON.error;
+                }
+                showToast("Error: " + errorMessage, "danger");
+            },
+            complete: function() {
+                $("button").prop("disabled", false);
+            }
+        });
+    }
+}
+function deleteSeating(id){
+    if(confirm("Are you sure?")){
+        $.ajax({
+            url:"../backend/seating.php", 
+            method:"POST", 
+            contentType:"application/json",
+            data: JSON.stringify({ _method: "DELETE", id:id }),
+            success:function(res){
+                if(res.success) {
+                    showToast("Entry deleted.", "success");
+                    loadSeatings();
+                }
+                else { showToast(res.error || "Error deleting", "danger"); }
+            },
+            error: () => showToast("Server error during delete.", "danger")
+        });
+    }
+}
+function deleteAllTheorySeating() {
+    if (confirm("Are you sure you want to delete ALL theory seating entries?")) {
+        $.ajax({
+            url: "../backend/seating.php", 
+            method: "POST", 
+            contentType: "application/json",
+            data: JSON.stringify({ _method: "DELETE_ALL_THEORY" }),
+            success: function(res) {
+                if (res.success) {
+                    showToast(`Successfully deleted ${res.deleted} entries.`, "success");
+                    loadSeatings();
+                } else {
+                    showToast(res.error || "Error deleting entries", "danger");
+                }
+            },
+            error: () => showToast("Server error during bulk delete.", "danger")
+        });
+    }
+}
+$("#tableSearchInput").on("keyup", function() {
+    const value = $(this).val().toLowerCase();
+    $("#seatingTable tbody tr").filter(function() {
+        $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+    });
+});
+
+
+// ---
+// --- THIS FUNCTION IS NOW UPDATED ---
+// ---
+async function showAdminSeatingMap(roomId, examId, roomName) {
+    const modal = new bootstrap.Modal(document.getElementById('seatingModal'));
+    const title = document.getElementById('seatingModalTitle');
+    const container = document.getElementById('seatMapContainer');
+
+    title.textContent = `Seating Layout for Room: ${roomName}`;
+    container.innerHTML = '<div class="spinner-border text-primary" role="status"></div>';
+    modal.show();
+
+    try {
+        const response = await fetch(`../backend/get_room_layout.php?room_id=${roomId}&exam_id=${examId}`);
+        const data = await response.json();
+        if (!data.success) throw new Error(data.error);
+
+        // ---
+        // --- 💡 NEW FIX: CALCULATE ROW/COL FROM SEAT_NO 💡 ---
+        // ---
+        const totalCols = data.room.total_cols;
+        data.allocations.forEach(alloc => {
+            // Example seat_no: "A503-16-L"
+            const parts = alloc.seat_no.split('-'); // ["A503", "16", "L"]
+            if (parts.length >= 2) {
+                const seatNum = parseInt(parts[1]); // 16
+                if (!isNaN(seatNum)) {
+                    // Calculate grid position from seat number
+                    alloc.seat_row = Math.floor((seatNum - 1) / totalCols) + 1;
+                    alloc.seat_col = ((seatNum - 1) % totalCols) + 1;
+                }
+            }
+        });
+        // --- END OF FIX ---
+
+        container.innerHTML = ""; 
+        const grid = document.createElement('div');
+        grid.className = 'seat-grid';
+        
+        grid.style.gridTemplateColumns = `repeat(${data.room.total_cols}, 1fr)`;
+        grid.classList.add(data.room.seating_type); 
+
+        const occupiedSeats = {};
+        data.allocations.forEach(alloc => {
+            const baseKey = `${alloc.seat_row}_${alloc.seat_col}`;
+            if (data.room.seating_type === 'single') {
+                occupiedSeats[baseKey] = alloc;
+            } else if (data.room.seating_type === 'double') {
+                const side = alloc.seat_no.endsWith('-L') ? 'L' : 'R';
+                occupiedSeats[`${baseKey}_${side}`] = alloc;
+            }
+        });
+
+        for (let r = 1; r <= data.room.total_rows; r++) {
+            for (let c = 1; c <= data.room.total_cols; c++) {
+                const seatDiv = document.createElement('div');
+                seatDiv.className = 'seat';
+
+                if (data.room.seating_type === 'single') {
+                    const seatKey = `${r}_${c}`;
+                    const alloc = occupiedSeats[seatKey];
+                    
+                    if (alloc) {
+                        seatDiv.textContent = alloc.seat_no.split('-').pop(); 
+                        seatDiv.classList.add('occupied');
+                        addPopover(seatDiv, alloc); 
+                    } else {
+                        seatDiv.textContent = `Empty`; 
+                        seatDiv.classList.add('empty');
+                    }
+                } else if (data.room.seating_type === 'double') {
+                    const benchKey = `${r}_${c}`;
+                    const seatL = occupiedSeats[`${benchKey}_L`];
+                    const seatR = occupiedSeats[`${benchKey}_R`];
+
+                    const benchL = document.createElement('div');
+                    benchL.className = 'bench-side left';
+                    if (seatL) {
+                        benchL.textContent = seatL.seat_no.split('-').pop(); 
+                        benchL.classList.add('occupied-side');
+                        addPopover(benchL, seatL);
+                    } else {
+                        benchL.textContent = `Empty L`;
+                    }
+                    seatDiv.appendChild(benchL);
+
+                    const benchR = document.createElement('div');
+                    benchR.className = 'bench-side right';
+                    if (seatR) {
+                        benchR.textContent = seatR.seat_no.split('-').pop(); 
+                        benchR.classList.add('occupied-side');
+                        addPopover(benchR, seatR);
+                    } else {
+                        benchR.textContent = `Empty R`;
+                    }
+                    seatDiv.appendChild(benchR);
+                }
+                grid.appendChild(seatDiv);
+            }
+        }
+        container.appendChild(grid);
+        
+        const popoverTriggerList = [].slice.call(container.querySelectorAll('[data-bs-toggle="popover"]'));
+        popoverTriggerList.map(function (popoverTriggerEl) {
+            return new bootstrap.Popover(popoverTriggerEl, { trigger: 'hover' });
+        });
+
+    } catch (error) {
+        console.error("Error fetching seating map:", error);
+        container.innerHTML = `<div class="alert alert-danger">Error loading map: ${error.message}</div>`;
+    }
+}
+// --- END OF UPDATED FUNCTION ---
+
+
+// Helper function to add popovers
+function addPopover(element, alloc) {
+    // Safely handle null student names
+    const studentName = alloc.student_name || 'Unknown Student';
+    
+    element.setAttribute('data-bs-toggle', 'popover');
+    element.setAttribute('data-bs-trigger', 'hover');
+    element.setAttribute('data-bs-placement', 'top');
+    element.setAttribute('data-bs-title', `Seat: ${alloc.seat_no}`);
+    element.setAttribute('data-bs-content', `Student: ${studentName} (ID: ${alloc.student_id})`);
+}
+
+
+$(document).ready(function(){
+    loadExams();
+    loadSeatings();
+});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>
