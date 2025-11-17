@@ -23,8 +23,8 @@ function sendApprovalEmail($to_name, $to_email, $username) {
         $mail->isSMTP();
         $mail->Host       = 'smtp.office365.com';
         $mail->SMTPAuth   = true;
-        $mail->Username   = 'kh.sc.i5mca23019@kh.students.amrita.edu';
-        $mail->Password   = 'Amma@1234'; // Using the password from your file
+        $mail->Username   = '';
+        $mail->Password   = ''; // Using the password from your file
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         $mail->Port       = 587;
 
